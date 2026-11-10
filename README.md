@@ -1,3 +1,5 @@
 # mb2e
 Markdown based blog engine
-<img width="702" height="337" alt="image" src="https://github.com/user-attachments/assets/c8edde46-790e-4066-82cc-cabb24940c73" />
+<br>
+<img width="2976" height="1428" alt="mb2e_logo" src="https://github.com/user-attachments/assets/917a073d-0db3-41fe-a053-724dd2bb14fa" />
+
