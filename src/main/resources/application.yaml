@@ -1,0 +1,35 @@
+spring:
+  main:
+    # banner-mode is set in Mb2eApplication: the logo shows in the interactive shell only.
+    log-startup-info: false
+  shell:
+    # Spring Shell's built-in commands and its --help option are removed in code
+    # (Mb2eApplication, ShellConfig), not switched off here, so no property in
+    # SPRING_APPLICATION_JSON can bring them back.
+    history:
+      enabled: false
+    interactive:
+      enabled: true
+    script:
+      enabled: true
+    # Spring Shell's one-shot mode joins the arguments and tokenizes them again.
+    # OneShotRunner (ShellConfig) replaces it and keeps each argument whole.
+    noninteractive:
+      enabled: false
+mb2e:
+  # Paths are machine-specific: put them in application_local_paths.yaml (git-ignored)
+  # in the working directory, or point MB2E_CONFIG at another file.
+  build:
+    # The note the site opens on.
+    default-note: about
+  log:
+    # Optional file that also receives each step line and the stack trace of a failure. Empty = off.
+    file: ""
+logging:
+  level:
+    root: warn
+    # A refusal is one plain line on standard error, written by its handler.
+    # The framework's "Application run failed" log and its trace are not wanted.
+    org.springframework.boot.SpringApplication: "off"
+    # JLine warns that a piped run has no system terminal; a refusal prints only its own sentence.
+    org.jline: error

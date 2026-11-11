@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Standard output carries the report and nothing else, so logging goes to standard error. -->
+<configuration>
+  <appender name="STDERR" class="ch.qos.logback.core.ConsoleAppender">
+    <target>System.err</target>
+    <encoder>
+      <pattern>%d{HH:mm:ss.SSS} %-5level %logger{36} - %msg%n</pattern>
+    </encoder>
+  </appender>
+  <!-- One line per step (see StepLog) at INFO, on standard error like everything else. -->
+  <logger name="mb2e.step" level="INFO"/>
+  <root level="WARN">
+    <appender-ref ref="STDERR"/>
+  </root>
+</configuration>

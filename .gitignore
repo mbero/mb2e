@@ -1,0 +1,6 @@
+target/
+.idea/
+*.iml
+.vscode/
+.DS_Store
+application_local_paths.yaml

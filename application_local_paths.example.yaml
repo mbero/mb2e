@@ -1,0 +1,11 @@
+# Copy to application_local_paths.yaml (git-ignored) and fill in your paths.
+mb2e:
+  vault:
+    path: "/path/to/obsidian-vault"
+  datasource:
+    path: "/path/to/site-template/datasource"
+  site:
+    template-path: "/path/to/site-template"
+  publish:
+    target-path: "/path/to/your-login.github.io"
+    expected-remote: "your-login.github.io"
