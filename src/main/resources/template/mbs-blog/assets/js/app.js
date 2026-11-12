@@ -173,7 +173,7 @@
             li.appendChild(build(node.children, path, showAll));
           } else {
             var empty = el('ul', { role: 'group' }, [
-              el('li', { className: 'tree__empty', text: 'Brak notatek' })
+              el('li', { className: 'tree__empty', text: 'No notes' })
             ]);
             li.appendChild(empty);
           }
@@ -189,7 +189,7 @@
     els.tree.replaceChildren.apply(els.tree, Array.from(built.childNodes));
 
     if (filterText && !els.tree.childNodes.length) {
-      els.tree.appendChild(el('li', { className: 'tree__empty', text: 'Brak wyników' }));
+      els.tree.appendChild(el('li', { className: 'tree__empty', text: 'No results' }));
     }
   }
 
@@ -221,7 +221,7 @@
         var target = NOTES[block.note];
         if (!target) return null;
         var p = el('p', { className: 'related' });
-        p.appendChild(document.createTextNode('Powiązane: '));
+        p.appendChild(document.createTextNode('Related: '));
         p.appendChild(el('a', { href: noteHref(block.note), text: target.title }));
         return p;
       }
@@ -245,13 +245,13 @@
     var items = [];
     if (prev) {
       items.push(el('a', { className: 'pager__link pager__link--prev', href: noteHref(prev) }, [
-        el('span', { className: 'pager__label', text: '← Poprzednia' }),
+        el('span', { className: 'pager__label', text: '← Previous' }),
         el('span', { className: 'pager__title', text: NOTES[prev].title })
       ]));
     }
     if (next) {
       items.push(el('a', { className: 'pager__link pager__link--next', href: noteHref(next) }, [
-        el('span', { className: 'pager__label', text: 'Następna →' }),
+        el('span', { className: 'pager__label', text: 'Next →' }),
         el('span', { className: 'pager__title', text: NOTES[next].title })
       ]));
     }
@@ -270,7 +270,7 @@
 
     var meta = [];
     if (note.date) meta.push(el('time', { datetime: note.date, text: note.date }));
-    meta.push(el('span', { text: Math.max(1, Math.ceil(countWords(note) / 200)) + ' min czytania' }));
+    meta.push(el('span', { text: Math.max(1, Math.ceil(countWords(note) / 200)) + ' min read' }));
     if (note.tags && note.tags.length) {
       meta.push(el('span', { className: 'article__tags' }, note.tags.map(function (t) {
         return el('span', { className: 'article__tag', text: '#' + t });
@@ -293,7 +293,7 @@
     els.sidebar.classList.toggle('is-open', open);
     els.scrim.hidden = !open;
     els.menuBtn.setAttribute('aria-expanded', String(open));
-    els.menuBtn.setAttribute('aria-label', open ? 'Zamknij menu kategorii' : 'Otwórz menu kategorii');
+    els.menuBtn.setAttribute('aria-label', open ? 'Close the category menu' : 'Open the category menu');
   }
 
   els.menuBtn.addEventListener('click', function () {

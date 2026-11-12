@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="pl">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -13,20 +13,20 @@
   <link rel="stylesheet" href="assets/css/styles.css">
 </head>
 <body>
-  <a class="skip-link" href="#content">Przejdź do treści</a>
+  <a class="skip-link" href="#content">Skip to content</a>
 
   <!-- Pasek widoczny tylko na telefonie -->
   <header class="topbar">
     <a class="topbar__brand" href="#/">
       <img src="assets/img/logo.jpeg" alt="MBS. Knowledge Hub Blog" width="1056" height="612">
     </a>
-    <button class="topbar__menu" type="button" aria-controls="sidebar" aria-expanded="false" aria-label="Otwórz menu kategorii">
+    <button class="topbar__menu" type="button" aria-controls="sidebar" aria-expanded="false" aria-label="Open the category menu">
       <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
     </button>
   </header>
 
   <div class="layout">
-    <aside class="sidebar" id="sidebar" aria-label="Kategorie">
+    <aside class="sidebar" id="sidebar" aria-label="Categories">
       <div class="sidebar__brand">
         <a href="#/">
           <img src="assets/img/logo.jpeg" alt="MBS. Knowledge Hub Blog" width="1056" height="612">
@@ -34,11 +34,11 @@
       </div>
 
       <div class="sidebar__filter">
-        <label class="visually-hidden" for="tree-filter">Filtruj notatki</label>
-        <input class="filter__input" id="tree-filter" type="search" placeholder="Filtruj…" autocomplete="off" spellcheck="false">
+        <label class="visually-hidden" for="tree-filter">Filter notes</label>
+        <input class="filter__input" id="tree-filter" type="search" placeholder="Filter…" autocomplete="off" spellcheck="false">
       </div>
 
-      <nav class="tree" aria-label="Kategorie i notatki">
+      <nav class="tree" aria-label="Categories and notes">
         <ul class="tree__list" id="tree" role="tree"></ul>
       </nav>
 
@@ -63,13 +63,13 @@
 
           <div class="prose" id="note-body"></div>
 
-          <nav class="pager" id="note-pager" aria-label="Nawigacja między notatkami"></nav>
+          <nav class="pager" id="note-pager" aria-label="Note navigation"></nav>
         </div>
       </main>
 
       <footer class="site-footer">
         <span class="site-footer__brand">Knowledge Hub</span>
-        <span>Notatki techniczne</span>
+        <span>Technical notes</span>
       </footer>
     </div>
   </div>
