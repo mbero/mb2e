@@ -2,19 +2,22 @@ package io.github.mbero.mb2e.domain.service;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Resolves links and attachments, and keeps the build's counters and lists.
- * <p>A link resolves by full note id, then by bare file name; an attachment by relative path,
- * then by bare file name; all case-insensitively. Attachment addresses begin {@code assets/media/}.
+ * <p>A link resolves by full note id, then by bare file name. An attachment resolves relative to
+ * the note's folder, then to the vault root, then by bare file name; all case-insensitively.
+ * Attachment addresses begin {@code assets/img/notes/}.
  */
 final class NoteIndex {
 
-    static final String MEDIA_PREFIX = "assets/media/";
+    static final String MEDIA_PREFIX = "assets/img/notes/";
 
     record Entry(String id, String title) {
     }
@@ -23,6 +26,7 @@ final class NoteIndex {
     private final Map<String, Entry> byBasename = new HashMap<>();
     private final Map<String, String> assetById = new HashMap<>();
     private final Map<String, String> assetByBasename = new HashMap<>();
+    private final Set<String> attachments = new LinkedHashSet<>();
     private final List<String> missingLinks = new ArrayList<>();
     private final List<String> missingAssets = new ArrayList<>();
 
@@ -37,6 +41,11 @@ final class NoteIndex {
         }
     }
 
+    /** The vault paths of the attachments resolved so far, each once, in the order they were first embedded. */
+    List<String> attachments() {
+        return new ArrayList<>(attachments);
+    }
+
     List<String> missingLinks() {
         return missingLinks;
     }
@@ -47,6 +56,8 @@ final class NoteIndex {
 
     /** The resolver for the text of one note: a miss is listed under that note's id. */
     LinkResolver forNote(String noteId) {
+        int slash = noteId.lastIndexOf('/');
+        String folder = slash < 0 ? "" : noteId.substring(0, slash + 1);
         return new LinkResolver() {
             @Override
             public Optional<NoteLink> resolveNote(String target) {
@@ -71,7 +82,10 @@ final class NoteIndex {
                 if (key.isEmpty() || key.endsWith(".md")) {
                     return Optional.empty();
                 }
-                String rel = assetById.get(key);
+                String rel = assetById.get(lower(folder) + key);
+                if (rel == null) {
+                    rel = assetById.get(key);
+                }
                 if (rel == null) {
                     rel = assetByBasename.get(lastSegment(key));
                 }
@@ -79,6 +93,7 @@ final class NoteIndex {
                     missingAssets.add(noteId + " -> [[" + target + "]]");
                     return Optional.empty();
                 }
+                attachments.add(rel);
                 return Optional.of(MEDIA_PREFIX + encodePath(rel));
             }
         };

@@ -4,7 +4,6 @@ import io.github.mbero.mb2e.domain.model.BuildReport;
 import io.github.mbero.mb2e.domain.model.PublishReport;
 import io.github.mbero.mb2e.domain.model.RunReport;
 import io.github.mbero.mb2e.domain.model.StepResult;
-import io.github.mbero.mb2e.domain.model.SyncReport;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -45,18 +44,10 @@ public class StepLog {
         }
     }
 
-    public void sync(SyncReport report) {
-        line("sync", report.outcome(), report.traceId(), report.title(), report.detail(),
-                "dryRun=" + report.dryRun() + " scanned=" + report.scannedCount() + " selected="
-                        + report.selectedCount() + " added=" + report.addedCount() + " updated="
-                        + report.updatedCount() + " unchanged=" + report.unchangedCount() + " attachments="
-                        + report.attachmentCount() + " missingFiles=" + report.missingAssetCount()
-                        + " linksOutside=" + report.brokenLinkCount());
-    }
-
     public void build(BuildReport report) {
         line("build", report.outcome(), report.traceId(), report.title(), report.detail(),
-                "notes=" + report.noteCount() + " attachments=" + report.attachmentCount() + " emptyNotes="
+                "dryRun=" + report.dryRun() + " notes=" + report.noteCount() + " attachments="
+                        + report.attachmentCount() + " emptyNotes="
                         + report.emptyNoteCount() + " unresolvedLinks=" + report.missingLinkCount()
                         + " missingFiles=" + report.missingAssetCount() + " bytes=" + report.outputBytes());
     }
@@ -68,17 +59,14 @@ public class StepLog {
                         + report.mediaDeletedCount() + " mediaMissing=" + report.missingMediaCount());
     }
 
-    /** Logs the three steps of a run; a step that did not happen shows as skipped or not_run. */
+    /** Logs the two steps of a run; a step that did not happen shows as skipped or not_run. */
     public void run(RunReport report) {
-        step("sync", report.sync(), report.traceId());
         step("build", report.build(), report.traceId());
         step("publish", report.publish(), report.traceId());
     }
 
     private <T> void step(String name, StepResult<T> result, String traceId) {
-        if (result.report() instanceof SyncReport report) {
-            sync(report);
-        } else if (result.report() instanceof BuildReport report) {
+        if (result.report() instanceof BuildReport report) {
             build(report);
         } else if (result.report() instanceof PublishReport report) {
             publish(report);

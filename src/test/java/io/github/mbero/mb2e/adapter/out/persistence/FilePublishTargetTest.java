@@ -18,16 +18,13 @@ class FilePublishTargetTest {
 
     private FilePublishTarget target(Path root) throws IOException {
         Files.createDirectories(root);
-        return new FilePublishTarget(root.toString(), temp.resolve("template"), temp.resolve("elsewhere/datasource"));
+        return new FilePublishTarget(root.toString(), temp.resolve("template"), temp.resolve("elsewhere/vault"));
     }
 
     @Test
-    void theFilesystemRootAndTheTemplateDirectoryAreNeverTargets() throws IOException {
-        Files.createDirectories(temp.resolve("template"));
-        assertThat(new FilePublishTarget("/", temp.resolve("template"), temp.resolve("d")).inspect())
+    void theFilesystemRootIsNeverATarget() {
+        assertThat(new FilePublishTarget("/", temp.resolve("template"), temp.resolve("v")).inspect())
                 .isEqualTo(PublishTarget.Kind.FILESYSTEM_ROOT);
-        assertThat(new FilePublishTarget(temp.resolve("template").toString(), temp.resolve("template"), temp.resolve("d")).inspect())
-                .isEqualTo(PublishTarget.Kind.TEMPLATE_DIRECTORY);
     }
 
     @Test
@@ -64,34 +61,37 @@ class FilePublishTargetTest {
         assertThat(temp.resolve("t/datasource")).doesNotExist();
     }
 
-    private FilePublishTarget overlapping(Path root, Path template, Path datasource) throws IOException {
+    private FilePublishTarget overlapping(Path root, Path template, Path vault) throws IOException {
         Files.createDirectories(root);
-        return new FilePublishTarget(root.toString(), template, datasource);
+        return new FilePublishTarget(root.toString(), template, vault);
     }
 
     @Test
-    void aDatasourceOrTemplateEqualToOrInsideTheTargetOverlaps() throws IOException {
+    void aVaultOrTemplateEqualToInsideOrAroundTheTargetOverlaps() throws IOException {
         Path root = temp.resolve("pages");
-        assertThat(overlapping(root, temp.resolve("tpl"), temp.resolve("ds")).overlap()).isEmpty();
-        assertThat(overlapping(root, temp.resolve("tpl"), root.resolve("datasource")).overlap().orElseThrow())
-                .contains(root.toRealPath().toString()).contains("datasource");
+        assertThat(overlapping(root, temp.resolve("tpl"), temp.resolve("vault")).overlap()).isEmpty();
+        assertThat(overlapping(root, temp.resolve("tpl"), root.resolve("vault")).overlap().orElseThrow())
+                .contains(root.toRealPath().toString()).contains("vault");
         assertThat(overlapping(root, temp.resolve("tpl"), root).overlap()).isPresent();
-        assertThat(overlapping(root, root.resolve("datasource/tpl"), temp.resolve("ds")).overlap().orElseThrow())
+        assertThat(overlapping(root, root.resolve("tpl"), temp.resolve("vault")).overlap().orElseThrow())
                 .contains("template directory");
+        assertThat(overlapping(temp, temp.resolve("tpl"), temp.resolve("vault")).overlap()).isPresent();
     }
 
     @Test
-    void aTargetInsideTheTemplateOverlaps() throws IOException {
+    void aTargetInsideTheTemplateOrTheVaultOverlaps() throws IOException {
         Path tpl = temp.resolve("tpl");
-        assertThat(overlapping(tpl.resolve("site"), tpl, temp.resolve("ds")).overlap().orElseThrow())
-                .contains("inside the template");
+        assertThat(overlapping(tpl.resolve("site"), tpl, temp.resolve("vault")).overlap().orElseThrow())
+                .contains("template directory");
+        Path vault = temp.resolve("vault");
+        assertThat(overlapping(vault.resolve("site"), tpl, vault).overlap().orElseThrow()).contains("vault");
     }
 
     @Test
     void theOverlapComparesRealPaths() throws IOException {
         Path root = temp.resolve("pages");
-        Files.createDirectories(root.resolve("datasource"));
-        Path link = Files.createSymbolicLink(temp.resolve("alias"), root.resolve("datasource"));
+        Files.createDirectories(root.resolve("vault"));
+        Path link = Files.createSymbolicLink(temp.resolve("alias"), root.resolve("vault"));
         assertThat(overlapping(root, temp.resolve("tpl"), link).overlap()).isPresent();
     }
 

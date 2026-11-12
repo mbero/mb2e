@@ -2,10 +2,9 @@
 mb2e:
   vault:
     path: "/path/to/obsidian-vault"
-  datasource:
-    path: "/path/to/site-template/datasource"
-  site:
-    template-path: "/path/to/site-template"
-  publish:
-    target-path: "/path/to/your-login.github.io"
-    expected-remote: "your-login.github.io"
+  template:
+    path: "/path/to/html_template/mbs-blog"
+  target:
+    path: "/path/to/your-login.github.io"
+  # Optional: the tag that selects a note (default: blog-ready).
+  # tag: blog-ready

@@ -1,24 +1,21 @@
 package io.github.mbero.mb2e.domain.service;
 
-import io.github.mbero.mb2e.domain.model.Bundle;
-import io.github.mbero.mb2e.domain.model.BuildPlan;
+import io.github.mbero.mb2e.domain.model.Assembly;
 import io.github.mbero.mb2e.domain.model.BuildReport;
-import io.github.mbero.mb2e.domain.model.Datasource;
+import io.github.mbero.mb2e.domain.model.ConfiguredPaths;
+import io.github.mbero.mb2e.domain.model.GeneratedSite;
 import io.github.mbero.mb2e.domain.model.NoteEntry;
-import io.github.mbero.mb2e.domain.model.SourceNote;
+import io.github.mbero.mb2e.domain.model.SiteData;
 import io.github.mbero.mb2e.domain.model.TreeNode;
+import io.github.mbero.mb2e.domain.model.Vault;
+import io.github.mbero.mb2e.domain.model.VaultNote;
 import io.github.mbero.mb2e.domain.port.in.BuildUseCase;
-import io.github.mbero.mb2e.domain.port.out.BundleStore;
-import io.github.mbero.mb2e.domain.port.out.DatasourceReader;
 import io.github.mbero.mb2e.domain.port.out.SiteSource;
 import io.github.mbero.mb2e.domain.port.out.StoreFailure;
-import java.time.Clock;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
+import io.github.mbero.mb2e.domain.port.out.VaultReader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,35 +23,34 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * Builds the content bundle: scans the datasource, renders every note and hands the bundle
- * to the store. The steps are scan, tree, two passes over the notes, the start note, the report.
+ * Selects the tagged notes of the vault, renders them and assembles the site in memory.
+ * <p>The steps are the configuration and template checks, the vault scan, the selection, the tree,
+ * two passes over the notes, the start note and the report. Nothing is written anywhere.
  */
 public class BuildService implements BuildUseCase {
 
     static final String ABOUT_ID = "about";
-    static final int WORDS_PER_MINUTE = 200;
 
-    private static final DateTimeFormatter INSTANT =
-            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").withZone(ZoneOffset.UTC);
-
-    private final DatasourceReader reader;
-    private final BundleStore store;
-    private final Clock clock;
-    private final String configuredDefaultNote;
+    private final VaultReader vaultReader;
     private final SiteSource site;
+    private final ConfiguredPaths paths;
+    private final String tag;
+    private final boolean inlineTags;
+    private final String configuredDefaultNote;
     private final Comparator<String> order = new PolishOrder();
 
-    public BuildService(DatasourceReader reader, BundleStore store, SiteSource site, Clock clock,
-            String configuredDefaultNote) {
-        this.reader = reader;
+    public BuildService(VaultReader vaultReader, SiteSource site, ConfiguredPaths paths, String tag,
+            boolean inlineTags, String configuredDefaultNote) {
+        this.vaultReader = vaultReader;
         this.site = site;
-        this.store = store;
-        this.clock = clock;
+        this.paths = paths;
+        this.tag = Selection.cleanTag(tag);
+        this.inlineTags = inlineTags;
         this.configuredDefaultNote = configuredDefaultNote;
     }
 
-    /** One scanned directory: sub-folders and notes in their sorted order, and the attachments. */
-    private record Folder(String name, String path, Folder[] folders, List<Note> notes, List<String> assets) {
+    /** A folder of selected notes: its sub-folders and its notes, both in their sorted order. */
+    private record Folder(String name, List<Folder> folders, List<Note> notes) {
     }
 
     /** A note while the build works on it. */
@@ -73,48 +69,52 @@ public class BuildService implements BuildUseCase {
         }
     }
 
-    /** The report, and the bundle it describes (null when refused). */
-    private record Built(BuildReport report, Bundle bundle) {
-    }
-
     @Override
     public BuildReport build(boolean dryRun) {
-        String traceId = UUID.randomUUID().toString();
-        try {
-            return run(traceId, dryRun, null).report();
-        } catch (StoreFailure failure) {
-            return BuildReport.refused(traceId, "The build could not complete", failure.getMessage());
-        }
+        return assemble(dryRun).report();
     }
 
     @Override
-    public BuildPlan plan(Datasource datasource) {
+    public Assembly assemble(boolean dryRun) {
         String traceId = UUID.randomUUID().toString();
         try {
-            Built built = run(traceId, true, datasource);
-            return new BuildPlan(built.report(), built.bundle() == null ? null : store.serialize(built.bundle()));
+            return run(traceId, dryRun);
         } catch (StoreFailure failure) {
-            return new BuildPlan(BuildReport.refused(traceId, "The build could not complete", failure.getMessage()),
-                    null);
+            return refused(traceId, dryRun, "The build could not complete", failure.getMessage());
         }
     }
 
-    private Built run(String traceId, boolean dryRun, Datasource given) {
+    private Assembly refused(String traceId, boolean dryRun, String title, String detail) {
+        return new Assembly(BuildReport.refused(traceId, title, detail, dryRun, paths), null);
+    }
+
+    private Assembly run(String traceId, boolean dryRun) {
+        Optional<String> unset = paths.unsetKey(false);
+        if (unset.isPresent()) {
+            return refused(traceId, dryRun, "Required path is not set", "The property " + unset.get()
+                    + " is not set.");
+        }
         Optional<TemplateCheck.Refusal> notATemplate = TemplateCheck.shape(site);
         if (notATemplate.isPresent()) {
-            return new Built(BuildReport.refused(traceId, notATemplate.get().title(),
-                    notATemplate.get().detail()), null);
+            return refused(traceId, dryRun, notATemplate.get().title(), notATemplate.get().detail());
         }
-        Datasource datasource = given != null ? given : reader.read();
-        Folder root = scan(datasource);
-        List<Note> notes = flattenNotes(root, new ArrayList<>());
-        List<String> assets = flattenAssets(root, new ArrayList<>());
+        Vault vault = vaultReader.read();
+        if (vault.status() == Vault.Status.MISSING) {
+            return refused(traceId, dryRun, "Vault directory not found",
+                    "The vault directory '" + vault.path() + "' does not exist.");
+        }
+        if (vault.status() == Vault.Status.NOT_A_DIRECTORY) {
+            return refused(traceId, dryRun, "Vault path is not a directory",
+                    "The vault path '" + vault.path() + "' is not a directory.");
+        }
 
-        if (notes.isEmpty()) {
-            return new Built(BuildReport.refused(traceId, "Datasource holds no notes",
-                    "No .md file was found in the datasource directory " + datasource.location()
-                            + ", or the directory does not exist"), null);
+        List<Note> selected = select(vault);
+        if (selected.isEmpty()) {
+            return refused(traceId, dryRun, "No note carries the selection tag",
+                    "No note in the vault carries the tag '" + tag + "'.");
         }
+        Folder root = group(selected);
+        List<Note> notes = flattenNotes(root, new ArrayList<>());
 
         // First pass: titles and front matter, needed to resolve [[links]].
         for (Note note : notes) {
@@ -123,45 +123,37 @@ public class BuildService implements BuildUseCase {
             note.body = parsed.body();
             note.title = titleOf(note);
         }
+        List<String> files = vault.files().stream().sorted().toList();
+        NoteIndex index = new NoteIndex(notes.stream().map(n -> new NoteIndex.Entry(n.id, n.title)).toList(), files);
 
-        NoteIndex index = new NoteIndex(notes.stream().map(n -> new NoteIndex.Entry(n.id, n.title)).toList(), assets);
-
-        // Second pass: render every note.
+        // Second pass: render every note into its one html block.
         Map<String, NoteEntry> entries = new LinkedHashMap<>();
         int empty = 0;
         for (Note note : notes) {
             List<Block> blocks = new ArrayList<>(MarkdownRenderer.render(note.body, index.forNote(note.id)));
-
-            if (!blocks.isEmpty() && blocks.get(0).type().equals("h1")) {
-                String heading = Js.trim(MarkdownRenderer.stripTags(blocks.get(0).html()));
-                if (heading.equals(note.title)) {
-                    blocks.remove(0);
-                }
+            if (!blocks.isEmpty() && blocks.get(0).type().equals("h1")
+                    && Js.trim(MarkdownRenderer.stripTags(blocks.get(0).html())).equals(note.title)) {
+                blocks.remove(0);
             }
-
-            String lead = "";
-            if (!blocks.isEmpty() && blocks.get(0).type().equals("p")) {
-                lead = MarkdownRenderer.unwrapParagraph(blocks.remove(0).html());
-            }
-
             StringBuilder html = new StringBuilder();
             for (int i = 0; i < blocks.size(); i++) {
                 html.append(i > 0 ? "\n" : "").append(blocks.get(i).html());
             }
-            if (lead.isEmpty() && html.length() == 0) {
+            if (html.length() == 0) {
                 empty++;
             }
-
             entries.put(note.id, new NoteEntry(note.title, note.folder,
-                    note.front.get("date") instanceof String date ? date : "", tagsOf(note.front),
-                    Math.max(1, ceilDiv(countWords(lead + " " + html), WORDS_PER_MINUTE)),
-                    lead, html.toString()));
+                    note.front.get("date") instanceof String date ? date : "", tagsOf(note.front), html.toString()));
         }
 
         List<TreeNode> tree = buildTree(root);
         List<String> flat = treeOrder(tree, new ArrayList<>());
 
         List<String> warnings = new ArrayList<>();
+        if (!entries.containsKey(ABOUT_ID)) {
+            warnings.add("The about page is missing: no " + ABOUT_ID + ".md at the vault root carries the tag '"
+                    + tag + "'.");
+        }
         boolean configured = configuredDefaultNote != null && !configuredDefaultNote.isEmpty();
         String defaultNote = configured && entries.containsKey(configuredDefaultNote)
                 ? configuredDefaultNote
@@ -171,24 +163,26 @@ public class BuildService implements BuildUseCase {
                     + defaultNote + "'");
         }
 
-        Bundle bundle = new Bundle(INSTANT.format(clock.instant()), defaultNote,
-                entries.containsKey(ABOUT_ID) ? ABOUT_ID : null, tree, flat, entries);
-        long bytes = store.write(bundle, dryRun);
-
-        return new Built(new BuildReport(traceId, BuildReport.OK, null, null, notes.size(), assets.size(), empty,
-                index.missingLinks().size(), index.missingAssets().size(), bytes, defaultNote, warnings,
-                index.missingLinks(), index.missingAssets()), bundle);
+        String script = SiteDataJson.script(new SiteData(defaultNote, tree, entries));
+        List<String> images = index.attachments();
+        BuildReport report = new BuildReport(traceId, BuildReport.OK, null, null, dryRun, paths.vault(),
+                paths.template(), vault.notes().size(), notes.size(), images, empty, index.missingLinks(),
+                index.missingAssets(), script.getBytes(StandardCharsets.UTF_8).length, defaultNote, warnings);
+        return new Assembly(report, new GeneratedSite(script, images));
     }
 
-    // ---------- scan ----------
+    // ---------- selection ----------
 
-    private static boolean hidden(String path) {
-        for (String segment : path.split("/")) {
-            if (segment.startsWith(".")) {
-                return true;
+    private List<Note> select(Vault vault) {
+        List<Note> selected = new ArrayList<>();
+        for (VaultNote note : vault.notes()) {
+            String text = Selection.normalise(new String(note.bytes(), StandardCharsets.UTF_8));
+            if (Selection.selects(text, tag, inlineTags)) {
+                String path = note.path();
+                selected.add(new Note(path.substring(0, path.length() - 3), parentOf(path), text));
             }
         }
-        return false;
+        return selected;
     }
 
     private static String parentOf(String path) {
@@ -196,67 +190,45 @@ public class BuildService implements BuildUseCase {
         return slash < 0 ? "" : path.substring(0, slash);
     }
 
-    private Folder scan(Datasource datasource) {
-        Map<String, List<String>> subdirectories = new HashMap<>();
-        Map<String, List<Note>> notesIn = new HashMap<>();
-        Map<String, List<String>> assetsIn = new HashMap<>();
+    // ---------- folders ----------
 
-        java.util.Set<String> directories = new java.util.LinkedHashSet<>();
-        for (String directory : datasource.directories()) {
-            addWithParents(directories, directory);
-        }
-        for (SourceNote note : datasource.notes()) {
-            if (!hidden(note.path())) {
-                addWithParents(directories, parentOf(note.path()));
-                String id = note.path().substring(0, note.path().length() - 3);
-                notesIn.computeIfAbsent(parentOf(note.path()), k -> new ArrayList<>())
-                        .add(new Note(id, parentOf(note.path()), note.text()));
+    /** Groups the selected notes by folder; a folder exists only because a selected note lies in or below it. */
+    private Folder group(List<Note> notes) {
+        Folder root = new Folder("", new ArrayList<>(), new ArrayList<>());
+        for (Note note : notes) {
+            Folder current = root;
+            if (!note.folder.isEmpty()) {
+                for (String name : note.folder.split("/")) {
+                    current = child(current, name);
+                }
             }
+            current.notes().add(note);
         }
-        for (String asset : datasource.attachments()) {
-            if (!hidden(asset)) {
-                addWithParents(directories, parentOf(asset));
-                assetsIn.computeIfAbsent(parentOf(asset), k -> new ArrayList<>()).add(asset);
-            }
-        }
-        for (String directory : directories) {
-            if (!directory.isEmpty() && !hidden(directory)) {
-                subdirectories.computeIfAbsent(parentOf(directory), k -> new ArrayList<>()).add(directory);
-            }
-        }
-        return folder("", "", subdirectories, notesIn, assetsIn);
+        sort(root);
+        return root;
     }
 
-    private static void addWithParents(java.util.Set<String> directories, String directory) {
-        String current = directory;
-        while (!current.isEmpty() && directories.add(current)) {
-            current = parentOf(current);
+    private static Folder child(Folder parent, String name) {
+        for (Folder folder : parent.folders()) {
+            if (folder.name().equals(name)) {
+                return folder;
+            }
         }
+        Folder created = new Folder(name, new ArrayList<>(), new ArrayList<>());
+        parent.folders().add(created);
+        return created;
     }
 
-    private Folder folder(String name, String path, Map<String, List<String>> subdirectories,
-            Map<String, List<Note>> notesIn, Map<String, List<String>> assetsIn) {
-        List<String> children = new ArrayList<>(subdirectories.getOrDefault(path, List.of()));
-        children.sort((a, b) -> order.compare(NoteIndex.lastSegment(a), NoteIndex.lastSegment(b)));
-        Folder[] folders = children.stream()
-                .map(child -> folder(NoteIndex.lastSegment(child), child, subdirectories, notesIn, assetsIn))
-                .toArray(Folder[]::new);
-        List<Note> notes = new ArrayList<>(notesIn.getOrDefault(path, List.of()));
-        notes.sort((a, b) -> order.compare(a.id, b.id));
-        List<String> assets = new ArrayList<>(assetsIn.getOrDefault(path, List.of()));
-        assets.sort((a, b) -> order.compare(a, b));
-        return new Folder(name, path, folders, notes, assets);
+    private void sort(Folder folder) {
+        folder.folders().sort((a, b) -> order.compare(a.name(), b.name()));
+        folder.notes().sort((a, b) -> order.compare(a.id, b.id));
+        folder.folders().forEach(this::sort);
     }
 
+    /** The notes in publication order: the notes of the sub-folders first, then the folder's own. */
     private static List<Note> flattenNotes(Folder node, List<Note> output) {
-        Arrays.stream(node.folders()).forEach(f -> flattenNotes(f, output));
+        node.folders().forEach(folder -> flattenNotes(folder, output));
         output.addAll(node.notes());
-        return output;
-    }
-
-    private static List<String> flattenAssets(Folder node, List<String> output) {
-        Arrays.stream(node.folders()).forEach(f -> flattenAssets(f, output));
-        output.addAll(node.assets());
         return output;
     }
 
@@ -265,7 +237,7 @@ public class BuildService implements BuildUseCase {
     private static List<TreeNode> buildTree(Folder node) {
         List<TreeNode> children = new ArrayList<>();
         for (Folder folder : node.folders()) {
-            children.add(new TreeNode.Folder(folder.name(), folder.path(), buildTree(folder)));
+            children.add(new TreeNode.Folder(folder.name(), buildTree(folder)));
         }
         for (Note note : node.notes()) {
             if (!note.id.equals(ABOUT_ID)) {
@@ -308,19 +280,5 @@ public class BuildService implements BuildUseCase {
             }
         }
         return out;
-    }
-
-    private static int countWords(String html) {
-        int count = 0;
-        for (String word : Js.regex("\\s+").split(MarkdownRenderer.stripTags(html))) {
-            if (!word.isEmpty()) {
-                count++;
-            }
-        }
-        return count;
-    }
-
-    private static int ceilDiv(int a, int b) {
-        return (a + b - 1) / b;
     }
 }

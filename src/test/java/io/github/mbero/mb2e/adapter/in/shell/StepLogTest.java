@@ -8,10 +8,10 @@ import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
 import io.github.mbero.mb2e.domain.model.BuildReport;
+import io.github.mbero.mb2e.domain.model.ConfiguredPaths;
 import io.github.mbero.mb2e.domain.model.PublishReport;
 import io.github.mbero.mb2e.domain.model.RunReport;
 import io.github.mbero.mb2e.domain.model.StepResult;
-import io.github.mbero.mb2e.domain.model.SyncReport;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -50,26 +50,27 @@ class StepLogTest {
     void eachStepWritesOneInfoLineWithStepOutcomeCountsAndTraceId() {
         StepLog log = new StepLog("");
         log.publish(published());
-        log.build(new BuildReport("t-2", "ok", null, null, 3, 1, 0, 0, 0, 100, "about", List.of(), List.of(),
-                List.of()));
-        log.sync(SyncReport.refused("t-3", "Vault not found", "No vault", false, "/v", 0));
+        log.build(new BuildReport("t-2", "ok", null, null, false, "/v", "/tpl", 4, 3, List.of("a.png"), 0,
+                List.of(), List.of(), 100, "about", List.of()));
+        log.build(BuildReport.refused("t-3", "Vault not found", "No vault", false,
+                new ConfiguredPaths("/v", "/tpl", null)));
 
         assertThat(events.list).hasSize(3).allSatisfy(event -> assertThat(event.getLevel()).isEqualTo(Level.INFO));
         assertThat(events.list.get(0).getFormattedMessage()).contains("step=publish", "outcome=ok",
                 "traceId=t-1", "changed=2", "deleted=1", "media=1");
-        assertThat(events.list.get(1).getFormattedMessage()).contains("step=build", "traceId=t-2", "notes=3");
-        assertThat(events.list.get(2).getFormattedMessage()).contains("step=sync", "outcome=refused",
+        assertThat(events.list.get(1).getFormattedMessage()).contains("step=build", "traceId=t-2", "notes=3",
+                "attachments=1");
+        assertThat(events.list.get(2).getFormattedMessage()).contains("step=build", "outcome=refused",
                 "traceId=t-3", "Vault not found");
     }
 
     @Test
-    void aRunLogsAllThreeStepsEvenWhenOneIsSkipped() {
-        new StepLog("").run(new RunReport("t-4", "ok", null, null, false, null, StepResult.skipped(),
-                StepResult.skipped(), StepResult.of("ok", published())));
+    void aRunLogsBothStepsEvenWhenOneIsSkipped() {
+        new StepLog("").run(new RunReport("t-4", "ok", null, null, false, StepResult.skipped(),
+                StepResult.of("ok", published())));
         assertThat(events.list).extracting(ILoggingEvent::getFormattedMessage).satisfiesExactly(
-                a -> assertThat(a).contains("step=sync", "outcome=skipped", "traceId=t-4"),
-                b -> assertThat(b).contains("step=build", "outcome=skipped"),
-                c -> assertThat(c).contains("step=publish", "outcome=ok"));
+                a -> assertThat(a).contains("step=build", "outcome=skipped", "traceId=t-4"),
+                b -> assertThat(b).contains("step=publish", "outcome=ok"));
     }
 
     @Test

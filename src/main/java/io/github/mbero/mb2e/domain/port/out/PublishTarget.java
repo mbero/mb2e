@@ -6,11 +6,11 @@ import java.util.Optional;
 /**
  * Working tree of the publication target; paths are relative with "/" separators.
  * <p>It writes and deletes files, and the adapter refuses a delete anywhere outside
- * {@code assets} and the datasource directory.
+ * {@code assets} and the stale {@code datasource} directory of an earlier layout.
  */
 public interface PublishTarget {
 
-    enum Kind { USABLE, FILESYSTEM_ROOT, TEMPLATE_DIRECTORY, MISSING, NOT_A_DIRECTORY, NOT_A_GIT_WORKING_COPY }
+    enum Kind { USABLE, FILESYSTEM_ROOT, MISSING, NOT_A_DIRECTORY, NOT_A_GIT_WORKING_COPY }
 
     /** Returns the configured path, as it was configured. */
     String location();
@@ -19,7 +19,7 @@ public interface PublishTarget {
 
     /**
      * Returns a sentence naming both paths when the target contains, equals or lies inside the
-     * template or the datasource, by real path; empty when they are apart.
+     * vault or the template, by real path; empty when they are apart.
      */
     Optional<String> overlap();
 

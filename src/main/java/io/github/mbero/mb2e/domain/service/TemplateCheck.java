@@ -3,16 +3,17 @@ package io.github.mbero.mb2e.domain.service;
 import io.github.mbero.mb2e.domain.port.out.SiteSource;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
-import java.util.regex.Pattern;
 
 /** Checks what a directory must hold to be the site template. */
 final class TemplateCheck {
 
-    static final String BUNDLE = "assets/js/content.js";
+    static final String PAGE = "index.html";
+    static final String APP_SCRIPT = "assets/js/app.js";
+    static final String HTML_BLOCK_MARKER = "case 'html'";
+    static final String NOTE_IMAGES = "assets/img/notes";
 
     private static final String INCOMPLETE = "The site is incomplete";
-    private static final Pattern LOADS_BUNDLE = Pattern.compile(
-            "<script\\b[^>]*\\bsrc\\s*=\\s*[\"']assets/js/content\\.js(\\?[^\"']*)?[\"']", Pattern.CASE_INSENSITIVE);
+    private static final String NOT_A_TEMPLATE = "The configured directory is not a site template";
 
     record Refusal(String title, String detail) {
     }
@@ -20,41 +21,27 @@ final class TemplateCheck {
     private TemplateCheck() {
     }
 
-    /** The page shape: index.html, .nojekyll, assets/js, assets/css, and a script tag for the bundle. */
+    /**
+     * Checks the page, the page script, the marker that the script renders an html block, and
+     * that the directory mb2e writes the note images to is empty.
+     */
     static Optional<Refusal> shape(SiteSource site) {
-        for (String file : new String[] {"index.html", ".nojekyll"}) {
-            if (!site.isFile(file)) {
-                return missing(file);
-            }
+        if (!site.isFile(PAGE)) {
+            return missing(PAGE);
         }
-        for (String directory : new String[] {"assets", "assets/js", "assets/css"}) {
-            if (!site.isDirectory(directory)) {
-                return missing(directory);
-            }
+        if (!site.isFile(APP_SCRIPT)) {
+            return missing(APP_SCRIPT);
         }
-        String page = new String(site.read("index.html"), StandardCharsets.UTF_8);
-        if (!LOADS_BUNDLE.matcher(page).find()) {
-            return Optional.of(new Refusal("The configured directory is not a site template",
-                    "index.html does not load " + BUNDLE));
+        String script = new String(site.read(APP_SCRIPT), StandardCharsets.UTF_8);
+        if (!script.contains(HTML_BLOCK_MARKER)) {
+            return Optional.of(new Refusal(NOT_A_TEMPLATE, APP_SCRIPT + " does not contain " + HTML_BLOCK_MARKER
+                    + ", so its page cannot show a note rendered as one html block"));
+        }
+        if (!site.files(NOTE_IMAGES).isEmpty()) {
+            return Optional.of(new Refusal(NOT_A_TEMPLATE, "The template holds files under " + NOTE_IMAGES
+                    + ", the directory where mb2e writes the note images"));
         }
         return Optional.empty();
-    }
-
-    /** Runs the whole check a publication makes; the bundle is checked before the shape of assets. */
-    static Optional<Refusal> publishable(SiteSource site, String bundleOverride) {
-        for (String file : new String[] {"index.html", ".nojekyll"}) {
-            if (!site.isFile(file)) {
-                return missing(file);
-            }
-        }
-        if (!site.isDirectory("assets")) {
-            return missing("assets");
-        }
-        boolean bundleThere = bundleOverride != null ? !bundleOverride.isEmpty() : site.size(BUNDLE) > 0;
-        if (!bundleThere) {
-            return Optional.of(new Refusal(INCOMPLETE, BUNDLE + " is missing or empty; run the build first"));
-        }
-        return shape(site);
     }
 
     private static Optional<Refusal> missing(String part) {

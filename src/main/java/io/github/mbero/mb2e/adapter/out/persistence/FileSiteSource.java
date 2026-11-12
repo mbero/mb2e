@@ -7,7 +7,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
-/** Reads the template directory. It never writes: the one file the build writes there goes through the bundle store. */
+/** Reads the template directory. It never writes. */
 public class FileSiteSource implements SiteSource {
 
     private final Path root;
@@ -29,16 +29,6 @@ public class FileSiteSource implements SiteSource {
     @Override
     public boolean isDirectory(String path) {
         return Files.isDirectory(root.resolve(path));
-    }
-
-    @Override
-    public long size(String path) {
-        try {
-            Path file = root.resolve(path);
-            return Files.isRegularFile(file) ? Files.size(file) : 0;
-        } catch (IOException failure) {
-            throw new StoreFailure("Cannot read " + root.resolve(path) + ": " + failure.getMessage(), failure);
-        }
     }
 
     @Override

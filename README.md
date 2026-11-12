@@ -11,21 +11,23 @@ It works in three steps:
 
 1. **You keep notes in Obsidian.** Tag the ones you want to publish with `blog-ready` in the front matter.
 2. **Your vault's structure becomes the site's content.** Folders turn into categories, notes into articles, and `[[wikilinks]]` into real links.
-3. **The output is GitHub Pages-ready.** You get one `index.html`, a bit of CSS and JS, and a single content file: `assets/js/content.js`.
+3. **The output is GitHub Pages-ready.** mb2e takes your site template, adds one generated file, `assets/js/data.js`, and writes the result into your local GitHub Pages repo.
+
+Nothing is kept in between. Every run reads the vault and the template, builds the site in memory and (for `publish`) writes it into the Pages repo. That's it: three folders, no copies.
 
 ```mermaid
 flowchart LR
-    V["🗂️ Obsidian vault<br/>(hundreds of notes)"] -->|"mb2e sync<br/>only #blog-ready"| D["📁 datasource/<br/>(selected notes)"]
-    D -->|"mb2e build<br/>Markdown → HTML"| C["📦 assets/js/content.js"]
-    C -->|"mb2e publish<br/>copy the site"| P["🌐 GitHub Pages repo<br/>(e.g. mbero.github.io)"]
+    V["🗂️ Obsidian vault<br/>(hundreds of notes)"] -->|"only blog-ready<br/>Markdown → HTML"| B["🧠 the site, in memory"]
+    T["🎨 site template<br/>(html_template/mbs-blog)"] --> B
+    B -->|"mb2e publish<br/>mirror the site"| P["🌐 GitHub Pages repo<br/>(e.g. mbero.github.io)"]
     P -->|"git push<br/>(you do this)"| W["✨ live website"]
 ```
 
-`mb2e run` does `sync`, `build` and `publish` in one go.
+`mb2e build` only looks and reports. `mb2e publish` also writes into the Pages repo. `mb2e run` does both in one report.
 
 ## Tagging a note for publication
 
-All you need is a tag in the front matter. Every spelling Obsidian understands works:
+All you need is a tag in the front matter. The tag is `blog-ready` by default; pick your own with `mb2e.tag` (see [Configure](#configure)). Every spelling Obsidian understands works:
 
 ```markdown
 ---
@@ -44,18 +46,31 @@ What ends up where:
 
 | In the vault | On the site |
 |---|---|
-| folder `Java/Collections/` | category `Java/Collections` |
+| folder `Java/Collections/` | a folder `Java/Collections` in the left panel |
 | front matter `title` (or the file name) | article title |
-| first paragraph | lead under the title |
+| the note's text | one block of HTML on the page |
 | `[[Another note]]` | a link to that note, if it is published too |
-| `![[image.png]]` | the image, copied to `assets/media/` |
-| text length | reading time (200 words a minute) |
+| `![[image.png]]` | the image, copied to `assets/img/notes/` |
+
+If a note repeats its own title as the first `# Heading`, mb2e drops that heading, because the page already shows the title.
+
+## The About page
+
+The site has an About page, and it comes from a note. This is all you do:
+
+1. Create a note called `about.md` at the **root** of your vault, not inside a folder.
+2. Tag it like any other note, with `tags: [blog-ready]` in the front matter.
+3. Write whatever you want people to read about you.
+
+That's it. The page shows up behind the link at the bottom of the left panel. It is **not** in the tree of notes. By default it is also the start page of the site (the setting `mb2e.default-note`, which is `about`).
+
+If `about.md` is missing, or has no tag, the build warns you and the site simply has no About page. A file called `about.md` inside a folder is an ordinary note, not the About page.
 
 ## What you need
 
 - **Java 25** and **Maven 3.9+**.
 - An Obsidian vault on disk.
-- **A site template**: a folder with `index.html`, `.nojekyll` and `assets/` (CSS, JS). `index.html` must load `assets/js/content.js`.
+- **A site template**: a folder in the format of `html_template/mbs-blog`. It needs `index.html` and `assets/js/app.js`, and that `app.js` must know how to show an `html` block (its text contains `case 'html'`). mb2e only reads the template and never changes it.
 - **A local clone of your GitHub Pages repo**, e.g. `your-login.github.io`.
 
 ## Install
@@ -67,9 +82,35 @@ mvn -q clean verify          # tests + build
 ls target/mb2e.jar           # done
 ```
 
+### Make `mb2e` a real command (macOS)
+
+Typing `java -jar target/mb2e.jar run` gets old fast. macOS uses zsh by default, so add a small shell function and type `mb2e run` from anywhere instead. Run this **from the mb2e directory** (the one with `application_local_paths.yaml`):
+
+```bash
+grep -qs '^mb2e()' ~/.zshrc || echo "mb2e() { (cd \"$PWD\" && java -jar target/mb2e.jar \"\$@\") }" >> ~/.zshrc
+source ~/.zshrc
+type mb2e                    # → mb2e is a shell function
+```
+
+Then, from any folder:
+
+```bash
+mb2e run --dry-run           # preview
+mb2e run                     # the real thing
+mb2e                         # interactive shell
+```
+
+A few notes:
+
+- It's a **function, not an alias**, because zsh aliases can't take arguments (`alias mb2e='… "$@"'` ends in `parse error near 'run'`).
+- The function `cd`s into the mb2e directory in a subshell, so mb2e finds `application_local_paths.yaml`, and your own terminal stays where it was.
+- The `grep -qs` guard makes the line safe to paste twice: it's only added once.
+- Moved the repo? Delete the `mb2e() { … }` line from `~/.zshrc` and run the snippet again from the new place.
+- On bash instead of zsh, use `~/.bash_profile` in place of `~/.zshrc`.
+
 ## Configure
 
-Your paths are machine-specific, so they live in **`application_local_paths.yaml`**. This file is git-ignored, so your real paths never land in the repo. Start from the template:
+You need three paths. They are machine-specific, so they live in **`application_local_paths.yaml`**. This file is git-ignored, so your real paths never land in the repo. Start from the template:
 
 ```bash
 cp application_local_paths.example.yaml application_local_paths.yaml
@@ -82,34 +123,38 @@ mb2e reads that file from the working directory, so run it from the repo root. T
 export MB2E_CONFIG=~/.config/mb2e/application_local_paths.yaml
 ```
 
-If a path isn't set, the command that needs it refuses to run. Everything you can put in the file (all keys are optional except the four paths):
+The three paths, and nothing else you must set:
 
 ```yaml
 mb2e:
   vault:
-    path: "/path/to/vault"
-  datasource:
-    path: "/path/to/template/datasource"   # selected notes land here
-  site:
-    template-path: "/path/to/template"     # index.html + assets/
-  publish:
-    target-path: "/path/to/your-login.github.io"
-    expected-remote: "your-login.github.io" # safety net: publish checks the remote
-  sync:
-    tag: blog-ready
-    inline-tags: false                      # true = #blog-ready in the body counts too
-  build:
-    default-note: about                     # the note the site opens on (empty = the first note)
-  log:
-    file: ""                                # optional log file; empty = no file
+    path: "/path/to/vault"                  # your Obsidian vault (mb2e only reads it)
+  template:
+    path: "/path/to/html_template/mbs-blog" # the site template (mb2e only reads it)
+  target:
+    path: "/path/to/your-login.github.io"   # the local Pages repo (the only place mb2e writes)
 ```
 
-mb2e always prints one line per step (sync, build, publish) with the outcome, the counts and the trace id on stderr, so stdout stays clean for `--json`. Set `mb2e.log.file` and the same lines also go to that file, together with the full stack trace of anything that blows up.
+`build` needs only the vault and the template. `publish` and `run` need all three. If a path isn't set, the command refuses and tells you which key is missing, for example `mb2e.target.path`.
+
+There are a few optional settings. Here they are with their defaults:
+
+```yaml
+mb2e:
+  tag: blog-ready        # the tag that selects a note
+  inline-tags: false     # true = a #blog-ready in the body counts too
+  default-note: about    # the note the site opens on (empty = the first note)
+  force: false           # true = a Pages remote that looks wrong is only a warning
+  log:
+    file: ""             # optional log file; empty = no file
+```
+
+mb2e prints one line per step (build, publish) with the outcome, the counts and the trace id on stderr, so stdout stays clean for `--json`. Set `mb2e.log.file` and the same lines also go to that file, together with the full stack trace of anything that blows up.
 
 Changes to `application_local_paths.yaml` take effect on the next run, with no rebuild needed. Settings are layered: the packaged `application.yaml` comes first, then `application_local_paths.yaml`, then `SPRING_APPLICATION_JSON`, and each layer overrides the one before it. To override a single setting for one run:
 
 ```bash
-export SPRING_APPLICATION_JSON='{"mb2e.sync.tag":"draft-ready"}'
+export SPRING_APPLICATION_JSON='{"mb2e.tag":"draft-ready"}'
 ```
 
 Command-line arguments **never** change the configuration. `--mb2e.vault.path=...` simply gets refused.
@@ -118,10 +163,9 @@ Command-line arguments **never** change the configuration. `--mb2e.vault.path=..
 
 | Command | What it does |
 |---|---|
-| `sync` | Copies tagged notes (and their attachments) from the vault into `datasource/`. It never deletes anything and never touches the vault. |
-| `build` | Renders `datasource/` into `assets/js/content.js`. If something goes wrong, the old file stays. |
-| `publish` | Checks the Pages repo, then copies the site into it. It prints the git commands at the end but never runs them. |
-| `run` | `sync` → `build` → `publish`. It stops at the first refusal. |
+| `build` | Selects the tagged notes, renders them and assembles the site **in memory**. It writes nothing, anywhere, and tells you what it found. |
+| `publish` | Does the same build, then mirrors the site into the Pages repo. It prints the git commands at the end but never runs them. |
+| `run` | `build` → `publish`, with one report that has a `build` and a `publish` section. It stops at the first refusal. |
 | `usage`, `help` | Cheat sheets. |
 
 Every working command accepts two flags:
@@ -129,41 +173,55 @@ Every working command accepts two flags:
 - `--dry-run` shows what would happen and writes nothing.
 - `--json` prints one JSON object on stdout, which is handy for scripts.
 
-`run` also takes `--skip-sync`, `--skip-build` and `--no-publish`.
+`run` also takes `--no-publish`, which makes it do the same as `build`.
 
 Exit codes: **0** means success, **1** means refused. The refusal message tells you exactly what's wrong, for example which folder is missing.
 
 Run it with no arguments to get an interactive shell with the logo. Type `exit` to leave.
 
+## What lands in the Pages repo
+
+`publish` makes the Pages repo hold exactly this site:
+
+- `index.html` from the template,
+- everything under the template's `assets/` (except its own sample `assets/js/data.js`, any `.md` file and `.DS_Store`),
+- the generated `assets/js/data.js`, which holds the whole content as `window.BLOG_DATA = { defaultNote, TREE, NOTES }`,
+- the images your published notes embed, under `assets/img/notes/<path in the vault>`,
+- an empty `.nojekyll`, so GitHub doesn't run the site through Jekyll.
+
+Everything else in the repo (`README.md`, `CNAME`, `.github/`) is left alone. Because the whole content sits in one JavaScript file, the site also works when you open `index.html` straight from disk.
+
+The template's folder `assets/img/notes/` belongs to mb2e, so a template that has files there is refused.
+
 ## Working locally, step by step
 
 ```mermaid
 flowchart TD
-    A["✍️ Write or edit a note<br/>and add the blog-ready tag"] --> B["run --dry-run<br/>👀 what will change?"]
-    B --> C["run --no-publish<br/>🔨 sync + build"]
-    C --> D{"Open the template's<br/>index.html in a browser.<br/>Looks good?"}
-    D -- no --> A
-    D -- yes --> E["run<br/>🚀 sync + build + publish"]
-    E --> F["git diff in the Pages repo<br/>+ the three git commands from the report"]
+    A["✍️ Write or edit a note<br/>and add the blog-ready tag"] --> B["build<br/>👀 what did mb2e find?"]
+    B --> C["run --dry-run<br/>📝 what would change in the repo?"]
+    C --> D["publish<br/>🔨 write the site into the Pages repo"]
+    D --> E{"Open index.html<br/>of the Pages repo.<br/>Looks good?"}
+    E -- no --> A
+    E -- yes --> F["git add, commit, push<br/>(the commands from the report)"]
 ```
 
-1. **Check the plan:**
+1. **See what mb2e finds:**
+   ```bash
+   java -jar target/mb2e.jar build
+   ```
+   The report shows how many notes were picked, the images, the links that point to untagged notes, and warnings such as a missing About page.
+2. **Plan the publication:**
    ```bash
    java -jar target/mb2e.jar run --dry-run
    ```
-   The report shows how many notes were picked, what gets added or changed, and which links point to untagged notes.
-2. **Build without publishing:**
-   ```bash
-   java -jar target/mb2e.jar run --no-publish
-   ```
-3. **Preview locally.** Open `index.html` from the template folder, or start a tiny server:
-   ```bash
-   cd /path/to/template && python3 -m http.server 8000
-   # http://localhost:8000
-   ```
-4. **Publish into your local Pages repo:**
+3. **Publish into your local Pages repo:**
    ```bash
    java -jar target/mb2e.jar run
+   ```
+4. **Preview.** Open `index.html` from the Pages repo, or start a tiny server:
+   ```bash
+   cd /path/to/your-login.github.io && python3 -m http.server 8000
+   # http://localhost:8000
    ```
 
 ## Deploying to GitHub Pages
@@ -180,7 +238,7 @@ sequenceDiagram
 
     You->>mb2e: java -jar target/mb2e.jar run
     mb2e->>Repo: checks: git repo? right remote? template OK?
-    mb2e->>Repo: copies index.html, .nojekyll, assets/
+    mb2e->>Repo: mirrors index.html, .nojekyll, assets/
     mb2e-->>You: report + 3 git commands
     You->>Repo: git add -A && git commit
     You->>GH: git push origin main
@@ -191,11 +249,10 @@ sequenceDiagram
 **One-time setup:**
 
 1. Create a repo named `your-login.github.io` on GitHub.
-2. Clone it locally and put the clone's path in `mb2e.publish.target-path`.
+2. Clone it locally and put the clone's path in `mb2e.target.path`.
 3. On GitHub, open **Settings → Pages → Build and deployment** and set:
    - **Source:** *Deploy from a branch*
    - **Branch:** `main`, folder `/ (root)`
-4. mb2e copies `.nojekyll` for you, so GitHub won't run the site through Jekyll.
 
 **Every time you publish:**
 
@@ -212,19 +269,20 @@ A minute or two later, the site is live at `https://your-login.github.io`.
 
 ## Safety nets
 
-- **The vault is read-only.** mb2e never writes to it.
-- **`sync` never deletes.** Removing a tag from a note won't delete it from `datasource/`. You clean up by hand.
-- **`publish` only deletes in three places of the Pages repo:** files in `assets/` that the template no longer has, media files in `assets/media/` that no published note references anymore, and the old `datasource/` folder. It doesn't touch the rest of the repo.
+- **The vault and the template are read-only.** mb2e never writes to them, and `build` writes nothing at all.
+- **The remote must be a Pages repo of its owner.** The origin of the target must be `https://github.com/<owner>/<owner>.github.io` or `git@github.com:<owner>/<owner>.github.io`, with or without `.git`, for any owner. `force: true` turns a mismatch into a warning.
+- **`publish` only deletes in two places of the Pages repo:** files in `assets/` that are not part of the site any more (a file the template dropped, an image no published note embeds), and a leftover top-level folder from an earlier layout of the site. It doesn't touch the rest of the repo.
+- **A note that loses its tag leaves the site** at the next publication, together with the images only it used. The site always mirrors what carries the tag today.
 - **`publish` never copies a `.md` file**, not even when a note points an image at one.
 - **`publish` never writes through a symlink.** If `assets/` or any folder below it is a link, it refuses.
-- **A file whose name only differs in case or Unicode form** (`STYLES.CSS` vs `styles.css`) is rewritten from the template, never deleted, because on a Mac they are the same file.
+- **A file whose name only differs in case or Unicode form** (`STYLES.CSS` vs `styles.css`) is rewritten from the site, never deleted, because on a Mac they are the same file.
+- **Uncommitted changes in the Pages repo** only give a warning. Site files are overwritten, the rest stays.
 - **`publish` refuses** when:
-  - the target isn't a git repo,
-  - the remote doesn't match,
-  - the target is the template folder itself, or one contains the other,
-  - the datasource or the template lies inside the Pages repo,
-  - the template doesn't load `content.js`,
-  - there is no built content.
+  - the target isn't a git repo or has no `origin`,
+  - the remote doesn't look like a Pages repo of its owner,
+  - the target is the filesystem root, or the vault or the template lies inside the target (or the other way round),
+  - the template has no `index.html`, no `assets/js/app.js`, or an `app.js` without `case 'html'`,
+  - no note carries the tag.
 - **`--dry-run` really writes nothing**, not even folders.
 
 ## Under the hood
@@ -233,13 +291,13 @@ mb2e uses Spring Boot and Spring Shell with a hexagonal architecture. The domain
 
 ```
 io.github.mbero.mb2e
-├── adapter.in.shell        commands: sync, build, publish, run, usage, help
-├── adapter.out.persistence files: vault, datasource, bundle, Pages repo
+├── adapter.in.shell        commands: build, publish, run, usage, help
+├── adapter.out.persistence files: vault, template, Pages repo
 ├── adapter.out.external    the git program (reads only)
 ├── domain
-│   ├── model               notes, reports, bundle
+│   ├── model               notes, reports, the assembled site
 │   ├── port.in / port.out  contracts
-│   └── service             SyncService, BuildService, PublishService, PipelineService,
-│                           MarkdownRenderer, LinkResolver
-└── infrastructure          configuration (Mb2eProperties, shell) and clock
+│   └── service             BuildService, PublishService, PipelineService,
+│                           MarkdownRenderer, Selection, RemoteGuard, TemplateCheck
+└── infrastructure          configuration (Mb2eProperties, shell)
 ```

@@ -1,21 +1,22 @@
 package io.github.mbero.mb2e.domain.service;
 
+import io.github.mbero.mb2e.domain.model.Assembly;
+import io.github.mbero.mb2e.domain.model.ConfiguredPaths;
 import io.github.mbero.mb2e.domain.model.GitChange;
-import io.github.mbero.mb2e.domain.model.PublishInputs;
 import io.github.mbero.mb2e.domain.model.PublishReport;
+import io.github.mbero.mb2e.domain.port.in.BuildUseCase;
 import io.github.mbero.mb2e.domain.port.in.PublishUseCase;
-import io.github.mbero.mb2e.domain.port.out.DatasourceFiles;
 import io.github.mbero.mb2e.domain.port.out.GitFailure;
 import io.github.mbero.mb2e.domain.port.out.GitRepository;
 import io.github.mbero.mb2e.domain.port.out.PublishTarget;
 import io.github.mbero.mb2e.domain.port.out.SiteSource;
 import io.github.mbero.mb2e.domain.port.out.StoreFailure;
+import io.github.mbero.mb2e.domain.port.out.VaultReader;
 import java.nio.charset.StandardCharsets;
 import java.text.Normalizer;
 import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -24,36 +25,37 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.UUID;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
- * Copies index.html, .nojekyll and assets into the target's working tree, fills assets/media
- * from the datasource, and lists the git commands without running them. Every guard runs and the
- * whole plan, deletions included, is complete before the first write; a dry run applies none of it.
+ * Mirrors the assembled site into the target's working tree: index.html, .nojekyll, the template
+ * assets, the generated data.js and the note images. It lists the git commands without running them.
+ * Every guard runs and the whole plan, deletions included, is complete before the first write;
+ * a dry run applies none of it.
  */
 public class PublishService implements PublishUseCase {
 
-    private static final String MEDIA_DIRECTORY = "assets/media";
+    private static final String NOTE_IMAGES = TemplateCheck.NOTE_IMAGES;
+    private static final String DATA_SCRIPT = "assets/js/data.js";
     private static final String STALE_DATASOURCE = "datasource";
     private static final String DS_STORE = ".DS_Store";
     private static final String COMMIT_MESSAGE = "chore(content): odśwież Knowledge Hub";
-    private static final Pattern WIKI_EMBED = Js.regex("!\\[\\[([^\\]|]+?)(?:\\|[^\\]]*)?\\]\\]");
 
+    private final BuildUseCase build;
+    private final VaultReader vault;
     private final SiteSource site;
     private final PublishTarget target;
     private final GitRepository git;
-    private final DatasourceFiles datasource;
-    private final String expectedRemote;
+    private final ConfiguredPaths paths;
     private final boolean force;
 
-    public PublishService(SiteSource site, PublishTarget target, GitRepository git, DatasourceFiles datasource,
-            String expectedRemote, boolean force) {
+    public PublishService(BuildUseCase build, VaultReader vault, SiteSource site, PublishTarget target,
+            GitRepository git, ConfiguredPaths paths, boolean force) {
+        this.build = build;
+        this.vault = vault;
         this.site = site;
         this.target = target;
         this.git = git;
-        this.datasource = datasource;
-        this.expectedRemote = expectedRemote;
+        this.paths = paths;
         this.force = force;
     }
 
@@ -68,34 +70,25 @@ public class PublishService implements PublishUseCase {
 
     @Override
     public PublishReport publish(boolean dryRun) {
-        return run(UUID.randomUUID().toString(), dryRun, PublishInputs.NONE);
-    }
-
-    @Override
-    public PublishReport plan(PublishInputs inputs) {
-        return run(UUID.randomUUID().toString(), true, inputs);
-    }
-
-    @Override
-    public Optional<PublishReport> checkTarget() {
-        String traceId = UUID.randomUUID().toString();
-        try {
-            return guard(traceId, false, new ArrayList<>());
-        } catch (GitFailure failure) {
-            return Optional.of(gitRefusal(traceId, false, failure));
+        Assembly built = build.assemble(dryRun);
+        if (built.report().isRefused()) {
+            return PublishReport.refused(UUID.randomUUID().toString(), built.report().title(),
+                    built.report().detail(), dryRun, target.location());
         }
+        return publish(built, dryRun);
     }
 
-    private PublishReport run(String traceId, boolean dryRun, PublishInputs inputs) {
+    @Override
+    public PublishReport publish(Assembly built, boolean dryRun) {
+        return run(UUID.randomUUID().toString(), dryRun, built);
+    }
+
+    private PublishReport run(String traceId, boolean dryRun, Assembly built) {
         try {
             List<String> warnings = new ArrayList<>();
             Optional<PublishReport> refused = guard(traceId, dryRun, warnings);
             if (refused.isPresent()) {
                 return refused.get();
-            }
-            Optional<TemplateCheck.Refusal> incomplete = TemplateCheck.publishable(site, inputs.bundleText());
-            if (incomplete.isPresent()) {
-                return refusal(traceId, dryRun, incomplete.get().title(), incomplete.get().detail());
             }
             String branch = git.branch();
             List<GitChange> before = git.status();
@@ -105,7 +98,7 @@ public class PublishService implements PublishUseCase {
                         + ". Site files will be overwritten; other files are left alone.");
             }
 
-            Plan plan = planFor(inputs);
+            Plan plan = planFor(built);
             warnings.addAll(plan.notes());
             boolean upToDate;
             List<String> changed;
@@ -133,16 +126,21 @@ public class PublishService implements PublishUseCase {
     // ---------- guards ----------
 
     private Optional<PublishReport> guard(String traceId, boolean dryRun, List<String> warnings) {
+        if (paths.target() == null) {
+            return Optional.of(refusal(traceId, dryRun, "Required path is not set",
+                    "The property " + ConfiguredPaths.TARGET_KEY + " is not set."));
+        }
         String path = target.location();
-        switch (target.inspect()) {
-            case FILESYSTEM_ROOT -> {
-                return Optional.of(refusal(traceId, dryRun, "Illegal publication target",
-                        "The filesystem root is never a publication target."));
-            }
-            case TEMPLATE_DIRECTORY -> {
-                return Optional.of(refusal(traceId, dryRun, "Illegal publication target",
-                        "The publication target is the template directory: " + path));
-            }
+        PublishTarget.Kind kind = target.inspect();
+        if (kind == PublishTarget.Kind.FILESYSTEM_ROOT) {
+            return Optional.of(refusal(traceId, dryRun, "Illegal publication target",
+                    "The filesystem root is never a publication target."));
+        }
+        Optional<String> overlap = target.overlap();
+        if (overlap.isPresent()) {
+            return Optional.of(refusal(traceId, dryRun, "Illegal publication target", overlap.get()));
+        }
+        switch (kind) {
             case MISSING -> {
                 return Optional.of(refusal(traceId, dryRun, "Publication target not found",
                         "The publication target '" + path + "' does not exist."));
@@ -155,21 +153,23 @@ public class PublishService implements PublishUseCase {
                 return Optional.of(refusal(traceId, dryRun, "Publication target is not a git working copy",
                         "The publication target '" + path + "' is not a git working copy."));
             }
-            case USABLE -> {
+            default -> {
                 // fall through to the remote check
             }
         }
-        Optional<String> overlap = target.overlap();
-        if (overlap.isPresent()) {
-            return Optional.of(refusal(traceId, dryRun, "Illegal publication target", overlap.get()));
+        Optional<String> origin = git.originUrl();
+        if (origin.isEmpty()) {
+            return Optional.of(refusal(traceId, dryRun, "Publication target has no origin remote",
+                    "The git working copy '" + path + "' has no remote named origin."));
         }
-        String origin = git.originUrl().orElse("(none)");
-        if (!origin.contains(expectedRemote)) {
+        if (!RemoteGuard.isPagesRepository(origin.get())) {
+            String expected = "origin is " + origin.get() + "; expected https://github.com/<owner>/<owner>.github.io"
+                    + " or git@github.com:<owner>/<owner>.github.io, with or without .git";
             if (!force) {
                 return Optional.of(refusal(traceId, dryRun, "Publication target is not the expected repository",
-                        "origin is " + origin + "; expected a remote containing " + expectedRemote));
+                        expected));
             }
-            warnings.add("Remote " + origin + " does not contain " + expectedRemote
+            warnings.add("Remote " + origin.get() + " is not a GitHub Pages repository of its owner"
                     + "; continuing because force is configured");
         }
         return Optional.empty();
@@ -185,65 +185,39 @@ public class PublishService implements PublishUseCase {
 
     // ---------- the plan ----------
 
-    private Plan planFor(PublishInputs inputs) {
+    private Plan planFor(Assembly built) {
+        Map<String, byte[]> source = new TreeMap<>();
+        source.put("index.html", site.read("index.html"));
+        source.put(".nojekyll", new byte[0]);
+        for (String file : site.files("assets")) {
+            if (!isDsStore(file) && !isMarkdown(file) && !file.equals(DATA_SCRIPT)) {
+                source.put(file, site.read(file));
+            }
+        }
+        source.put(DATA_SCRIPT, built.site().dataScript().getBytes(StandardCharsets.UTF_8));
+        List<String> media = new ArrayList<>(built.site().images());
+        for (String image : media) {
+            source.put(NOTE_IMAGES + "/" + image, vault.readFile(image));
+        }
+
         Map<String, byte[]> writes = new TreeMap<>();
         List<String> notes = new ArrayList<>();
-        for (String file : new String[] {"index.html", ".nojekyll"}) {
-            copyIfDifferent(file, site.read(file), writes);
-        }
+        source.forEach((path, bytes) -> copyIfDifferent(path, bytes, writes));
 
-        Map<String, byte[]> source = new HashMap<>();
-        List<String> sourceFiles = new ArrayList<>(site.files("assets"));
-        if (inputs.bundleText() != null && !sourceFiles.contains(TemplateCheck.BUNDLE)) {
-            sourceFiles.add(TemplateCheck.BUNDLE);
-        }
-        for (String file : sourceFiles) {
-            if (!isMirrored(file)) {
-                continue;
-            }
-            if (isMarkdown(file)) {
-                notes.add("Not published: " + file + " is a Markdown source.");
-                continue;
-            }
-            byte[] bytes = file.equals(TemplateCheck.BUNDLE) && inputs.bundleText() != null
-                    ? inputs.bundleText().getBytes(StandardCharsets.UTF_8) : site.read(file);
-            source.put(file, bytes);
-            copyIfDifferent(file, bytes, writes);
-        }
-        List<String> deleted = new ArrayList<>();
         Map<String, String> sourceByForm = byForm(source.keySet());
+        List<String> deleted = new ArrayList<>();
+        List<String> mediaDeleted = new ArrayList<>();
         for (String file : target.files("assets")) {
-            if (isMirrored(file) && !source.containsKey(file)) {
-                if (!rewriteTwin(file, sourceByForm, source, "", writes, notes)) {
-                    deleted.add(file);
-                }
-            }
-        }
-
-        String bundle = inputs.bundleText() != null ? inputs.bundleText()
-                : new String(site.read(TemplateCheck.BUNDLE), StandardCharsets.UTF_8);
-        Map<String, byte[]> media = new LinkedHashMap<>();
-        List<String> missing = new ArrayList<>();
-        for (BundleMedia.Ref ref : BundleMedia.parse(bundle)) {
-            if (isMarkdown(ref.path())) {
-                notes.add("Not published: " + MEDIA_DIRECTORY + "/" + ref.path() + " is a Markdown source.");
+            if (isDsStore(file) || source.containsKey(file)) {
                 continue;
             }
-            Optional<byte[]> bytes = readDatasource(ref.path(), inputs);
-            if (bytes.isPresent()) {
-                media.put(ref.path(), bytes.get());
-                copyIfDifferent(MEDIA_DIRECTORY + "/" + ref.path(), bytes.get(), writes);
-            } else {
-                missing.add(missingEntry(ref, inputs));
+            if (rewriteTwin(file, sourceByForm, source, writes, notes)) {
+                continue;
             }
-        }
-        List<String> mediaDeleted = new ArrayList<>();
-        Map<String, String> mediaByForm = byForm(media.keySet());
-        for (String file : target.files(MEDIA_DIRECTORY)) {
-            String relative = file.substring(MEDIA_DIRECTORY.length() + 1);
-            if (!media.containsKey(relative) && !relative.endsWith(DS_STORE)
-                    && !rewriteTwin(relative, mediaByForm, media, MEDIA_DIRECTORY + "/", writes, notes)) {
-                mediaDeleted.add(relative);
+            if (file.startsWith(NOTE_IMAGES + "/")) {
+                mediaDeleted.add(file.substring(NOTE_IMAGES.length() + 1));
+            } else {
+                deleted.add(file);
             }
         }
 
@@ -253,21 +227,21 @@ public class PublishService implements PublishUseCase {
         }
         deleted.sort(null);
         writes.keySet().forEach(target::verifyWritable);
-        return new Plan(writes, deleted, stale, new ArrayList<>(media.keySet()), mediaDeleted, missing, notes);
+        return new Plan(writes, deleted, stale, media, mediaDeleted, built.report().missingAssets(), notes);
     }
 
     /**
-     * A stale target file that is the very file of a source file on this file system, whose name
-     * differs only in case or Unicode form, is not deleted: the source file is written over it.
+     * A stale target file that is the very file of a site file on this file system, whose name
+     * differs only in case or Unicode form, is not deleted: the site file is written over it.
      */
-    private boolean rewriteTwin(String stale, Map<String, String> sourceByForm, Map<String, byte[]> bytes,
-            String prefix, Map<String, byte[]> writes, List<String> notes) {
+    private boolean rewriteTwin(String stale, Map<String, String> sourceByForm, Map<String, byte[]> source,
+            Map<String, byte[]> writes, List<String> notes) {
         String twin = sourceByForm.get(form(stale));
-        if (twin == null || !target.sameFile(prefix + stale, prefix + twin)) {
+        if (twin == null || !target.sameFile(stale, twin)) {
             return false;
         }
-        writes.put(prefix + twin, bytes.get(twin));
-        notes.add(prefix + stale + " differs from " + prefix + twin
+        writes.put(twin, source.get(twin));
+        notes.add(stale + " differs from " + twin
                 + " only in letter case or Unicode form; it is rewritten from the source, not deleted.");
         return true;
     }
@@ -287,16 +261,14 @@ public class PublishService implements PublishUseCase {
         return path.toLowerCase(Locale.ROOT).endsWith(".md");
     }
 
+    private static boolean isDsStore(String file) {
+        return file.substring(file.lastIndexOf('/') + 1).equals(DS_STORE);
+    }
+
     private static Set<String> untracked(List<GitChange> changes) {
         Set<String> paths = new HashSet<>();
         changes.stream().filter(GitChange::isUntracked).map(GitChange::path).forEach(paths::add);
         return paths;
-    }
-
-    /** A file the assets mirror owns: not .DS_Store (never copied, never deleted) and not under assets/media. */
-    private static boolean isMirrored(String file) {
-        return !file.startsWith(MEDIA_DIRECTORY + "/")
-                && !file.substring(file.lastIndexOf('/') + 1).equals(DS_STORE);
     }
 
     private void copyIfDifferent(String path, byte[] bytes, Map<String, byte[]> writes) {
@@ -305,44 +277,11 @@ public class PublishService implements PublishUseCase {
         }
     }
 
-    private Optional<byte[]> readDatasource(String path, PublishInputs inputs) {
-        byte[] planned = inputs.datasourceFiles().get(path);
-        return planned != null ? Optional.of(planned) : datasource.read(path);
-    }
-
-    /** Describes a missing medium: the note, the author's wikilink when the note is still readable, and the published path. */
-    private String missingEntry(BundleMedia.Ref ref, PublishInputs inputs) {
-        String published = MEDIA_DIRECTORY + "/" + ref.path();
-        Optional<byte[]> note = readDatasource(ref.noteId() + ".md", inputs);
-        if (note.isPresent()) {
-            Optional<String> link = wikilinkFor(new String(note.get(), StandardCharsets.UTF_8), ref.path());
-            if (link.isPresent()) {
-                return ref.noteId() + " -> [[" + link.get() + "]] (" + published + ")";
-            }
-        }
-        return ref.noteId() + " -> " + published;
-    }
-
-    private static Optional<String> wikilinkFor(String noteText, String path) {
-        String wanted = path.toLowerCase(Locale.ROOT);
-        String name = wanted.substring(wanted.lastIndexOf('/') + 1);
-        Matcher embeds = WIKI_EMBED.matcher(noteText);
-        while (embeds.find()) {
-            String written = Js.trim(embeds.group(1));
-            int hash = written.indexOf('#');
-            String clean = (hash < 0 ? written : written.substring(0, hash)).toLowerCase(Locale.ROOT);
-            if (clean.equals(wanted) || clean.equals(name) || wanted.endsWith("/" + clean)) {
-                return Optional.of(written);
-            }
-        }
-        return Optional.empty();
-    }
-
     // ---------- applying and reporting ----------
 
     private void apply(Plan plan) {
         plan.deleted().stream().filter(file -> !file.startsWith(STALE_DATASOURCE + "/")).forEach(target::delete);
-        plan.mediaDeleted().forEach(file -> target.delete(MEDIA_DIRECTORY + "/" + file));
+        plan.mediaDeleted().forEach(file -> target.delete(NOTE_IMAGES + "/" + file));
         if (plan.staleDirectory()) {
             target.deleteTree(STALE_DATASOURCE);
         }
@@ -356,7 +295,7 @@ public class PublishService implements PublishUseCase {
                 .filter(path -> !alreadyThere.contains(path) || plan.writes().containsKey(path))
                 .forEach(changed::add);
         plan.deleted().forEach(changed::remove);
-        plan.mediaDeleted().forEach(file -> changed.remove(MEDIA_DIRECTORY + "/" + file));
+        plan.mediaDeleted().forEach(file -> changed.remove(NOTE_IMAGES + "/" + file));
         return new ArrayList<>(changed);
     }
 

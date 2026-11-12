@@ -21,10 +21,10 @@ class Mb2eApplicationTest {
     @Autowired
     CommandCatalog catalog;
 
-    /** Help, usage and exit, and the four working commands. */
+    /** Help, usage and exit, and the three working commands. */
     @Test
     void theShellOffersOnlyTheCommandsThatExist() {
-        assertThat(catalog.getRegistrations().keySet()).containsExactlyInAnyOrder("help", "usage", "exit", "run", "sync", "build", "publish");
+        assertThat(catalog.getRegistrations().keySet()).containsExactlyInAnyOrder("help", "usage", "exit", "run", "build", "publish");
     }
 
     @Test
@@ -48,8 +48,8 @@ class Mb2eApplicationTest {
         catalog.getRegistrations().forEach((name, registration) -> {
             if (name.equals("run")) {
                 assertThat(registration.getOptions().stream().flatMap(o -> java.util.Arrays.stream(o.getLongNames())))
-                        .containsExactlyInAnyOrder("json", "dry-run", "skip-sync", "skip-build", "no-publish");
-            } else if (name.equals("build") || name.equals("sync") || name.equals("publish")) {
+                        .containsExactlyInAnyOrder("json", "dry-run", "no-publish");
+            } else if (name.equals("build") || name.equals("publish")) {
                 assertThat(registration.getOptions().stream().flatMap(o -> java.util.Arrays.stream(o.getLongNames())))
                         .containsExactlyInAnyOrder("json", "dry-run");
             } else {

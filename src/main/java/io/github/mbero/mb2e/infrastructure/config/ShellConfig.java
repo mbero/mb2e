@@ -9,7 +9,6 @@ import io.github.mbero.mb2e.adapter.in.shell.PublishCommand;
 import io.github.mbero.mb2e.adapter.in.shell.RefusalReporter;
 import io.github.mbero.mb2e.adapter.in.shell.RunCommand;
 import io.github.mbero.mb2e.adapter.in.shell.StepLog;
-import io.github.mbero.mb2e.adapter.in.shell.SyncCommand;
 import io.github.mbero.mb2e.adapter.in.shell.UsageCommand;
 import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
 import org.springframework.beans.factory.config.BeanPostProcessor;
@@ -29,8 +28,8 @@ import org.springframework.shell.result.GenericResultHandlerService;
  * help, usage, exit and the mb2e commands remain; no property can bring the others back.
  */
 @Configuration(proxyBeanMethods = false)
-@EnableCommand({UsageCommand.class, HelpCommand.class, ExitCommand.class, BuildCommand.class, SyncCommand.class,
-        PublishCommand.class, RunCommand.class})
+@EnableCommand({UsageCommand.class, HelpCommand.class, ExitCommand.class, BuildCommand.class, PublishCommand.class,
+        RunCommand.class})
 public class ShellConfig {
 
     /**

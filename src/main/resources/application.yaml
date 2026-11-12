@@ -17,11 +17,19 @@ spring:
     noninteractive:
       enabled: false
 mb2e:
-  # Paths are machine-specific: put them in application_local_paths.yaml (git-ignored)
-  # in the working directory, or point MB2E_CONFIG at another file.
-  build:
-    # The note the site opens on.
-    default-note: about
+  # The three paths are machine-specific and have no default: put them in
+  # application_local_paths.yaml (git-ignored) in the working directory, or point MB2E_CONFIG
+  # at another file. Needed keys: mb2e.vault.path, mb2e.template.path and mb2e.target.path.
+  # build needs only the vault and the template.
+  #
+  # The tag that selects a note.
+  tag: blog-ready
+  # Whether a #tag in the body selects a note as well as the front matter does.
+  inline-tags: false
+  # The note the site opens on; empty means the first note of the tree.
+  default-note: about
+  # Relaxes the remote check of the target into a warning.
+  force: false
   log:
     # Optional file that also receives each step line and the stack trace of a failure. Empty = off.
     file: ""

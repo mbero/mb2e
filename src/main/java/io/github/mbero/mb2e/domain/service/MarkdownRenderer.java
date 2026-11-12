@@ -99,7 +99,7 @@ final class MarkdownRenderer {
             if (note.isPresent()) {
                 return anchor(note.get(), alias);
             }
-            return "<span class=\"missing-link\" title=\"Brak pliku w datasource\">"
+            return "<span class=\"missing-link\" title=\"Brak pliku w vaulcie\">"
                     + escapeHtml(alt(alias, target)) + "</span>";
         });
 
@@ -111,7 +111,7 @@ final class MarkdownRenderer {
             if (note.isPresent()) {
                 return anchor(note.get(), alias);
             }
-            return "<span class=\"missing-link\" title=\"Brak notatki w datasource\">"
+            return "<span class=\"missing-link\" title=\"Notatka nie jest publikowana\">"
                     + escapeHtml(alt(alias, target)) + "</span>";
         });
 

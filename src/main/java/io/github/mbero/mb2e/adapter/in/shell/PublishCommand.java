@@ -8,7 +8,7 @@ import org.springframework.shell.command.annotation.Command;
 import org.springframework.shell.command.annotation.Option;
 
 /**
- * Shell command {@code publish [--json] [--dry-run]} that copies the site into the publication target.
+ * Shell command {@code publish [--json] [--dry-run]} that builds the site and mirrors it into the publication target.
  * <p>Prints the git commands the operator runs next and runs none of them. Refusals are
  * reported as in {@link BuildCommand}.
  */
@@ -23,7 +23,7 @@ public class PublishCommand {
         this.log = log;
     }
 
-    @Command(command = "publish", description = "Copy the built site into the publication target")
+    @Command(command = "publish", description = "Build the site and mirror it into the publication target")
     public String publish(CommandContext context,
             @Option(longNames = "json", defaultValue = "false") boolean json,
             @Option(longNames = "dry-run", defaultValue = "false") boolean dryRun) {
@@ -50,16 +50,16 @@ public class PublishCommand {
         report.warnings().forEach(warning -> out.append("Warning: ").append(warning).append(nl));
         report.changedFiles().forEach(path -> out.append(mark).append("~ ").append(path).append(nl));
         report.deleted().forEach(path -> out.append(mark).append("- ").append(path).append(nl));
-        report.media().forEach(path -> out.append(mark).append("+ assets/media/").append(path).append(nl));
-        report.mediaDeleted().forEach(path -> out.append(mark).append("- assets/media/").append(path).append(nl));
+        report.media().forEach(path -> out.append(mark).append("+ assets/img/notes/").append(path).append(nl));
+        report.mediaDeleted().forEach(path -> out.append(mark).append("- assets/img/notes/").append(path).append(nl));
         lines(out, "image will not load: ", report.missingMedia());
         out.append("Target:              ").append(report.targetPath()).append(nl)
                 .append("Branch:              ").append(report.branch()).append(nl)
                 .append("Changed files:       ").append(report.changedFileCount()).append(nl)
                 .append("Deleted:             ").append(report.deletedCount()).append(nl)
-                .append("Media copied:        ").append(report.mediaCount()).append(nl)
-                .append("Media removed:       ").append(report.mediaDeletedCount()).append(nl)
-                .append("Media missing:       ").append(report.missingMediaCount()).append(nl);
+                .append("Images copied:       ").append(report.mediaCount()).append(nl)
+                .append("Images removed:      ").append(report.mediaDeletedCount()).append(nl)
+                .append("Images missing:      ").append(report.missingMediaCount()).append(nl);
         if (report.message() != null) {
             out.append(report.message()).append(nl);
         }
