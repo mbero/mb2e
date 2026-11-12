@@ -82,6 +82,32 @@ mvn -q clean verify          # tests + build
 ls target/mb2e.jar           # done
 ```
 
+### Make `mb2e` a real command (macOS)
+
+Typing `java -jar target/mb2e.jar run` gets old fast. macOS uses zsh by default, so add a small shell function and type `mb2e run` from anywhere instead. Run this **from the mb2e directory** (the one with `application_local_paths.yaml`):
+
+```bash
+grep -qs '^mb2e()' ~/.zshrc || echo "mb2e() { (cd \"$PWD\" && java -jar target/mb2e.jar \"\$@\") }" >> ~/.zshrc
+source ~/.zshrc
+type mb2e                    # → mb2e is a shell function
+```
+
+Then, from any folder:
+
+```bash
+mb2e run --dry-run           # preview
+mb2e run                     # the real thing
+mb2e                         # interactive shell
+```
+
+A few notes:
+
+- It's a **function, not an alias**, because zsh aliases can't take arguments (`alias mb2e='… "$@"'` ends in `parse error near 'run'`).
+- The function `cd`s into the mb2e directory in a subshell, so mb2e finds `application_local_paths.yaml`, and your own terminal stays where it was.
+- The `grep -qs` guard makes the line safe to paste twice: it's only added once.
+- Moved the repo? Delete the `mb2e() { … }` line from `~/.zshrc` and run the snippet again from the new place.
+- On bash instead of zsh, use `~/.bash_profile` in place of `~/.zshrc`.
+
 ## Configure
 
 You need three paths. They are machine-specific, so they live in **`application_local_paths.yaml`**. This file is git-ignored, so your real paths never land in the repo. Start from the template:
