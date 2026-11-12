@@ -20,6 +20,10 @@ class FileVaultReaderTest {
         Path vault = Files.createDirectories(temp.resolve("vault"));
         Files.createDirectories(vault.resolve(".trash"));
         Files.writeString(vault.resolve(".trash/Gone.md"), "x");
+        Files.createDirectories(vault.resolve("node_modules"));
+        Files.writeString(vault.resolve("node_modules/Dep.md"), "x");
+        Files.writeString(vault.resolve(".hidden.md"), "x");
+        Files.writeString(vault.resolve(".hidden.png"), "x");
         Files.writeString(vault.resolve("Real.md"), "x");
         Files.writeString(vault.resolve("pic.png"), "x");
         Files.createSymbolicLink(vault.resolve("Link"), outside);

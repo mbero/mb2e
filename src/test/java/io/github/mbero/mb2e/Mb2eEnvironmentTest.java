@@ -10,9 +10,9 @@ class Mb2eEnvironmentTest {
 
     @Test
     void keysUnderMb2eAreAccepted_flatOrNested() {
-        Mb2eEnvironment flat = Mb2eEnvironment.create("{\"mb2e.vault.path\":\"/v\",\"mb2e.publish.force\":true}");
+        Mb2eEnvironment flat = Mb2eEnvironment.create("{\"mb2e.vault.path\":\"/v\",\"mb2e.force\":true}");
         assertThat(flat.getProperty("mb2e.vault.path")).isEqualTo("/v");
-        assertThat(flat.getProperty("mb2e.publish.force", Boolean.class)).isTrue();
+        assertThat(flat.getProperty("mb2e.force", Boolean.class)).isTrue();
         Mb2eEnvironment nested = Mb2eEnvironment.create("{\"mb2e\":{\"vault\":{\"path\":\"/n\"}}}");
         assertThat(nested.getProperty("mb2e.vault.path")).isEqualTo("/n");
     }
@@ -59,14 +59,6 @@ class Mb2eEnvironmentTest {
     void mb2eConfigNamesTheLocalPathsFile() {
         assertThat(Mb2eEnvironment.create(null, "/etc/mb2e/paths.yaml").getProperty("spring.config.location"))
                 .isEqualTo("classpath:/application.yaml,optional:file:/etc/mb2e/paths.yaml");
-    }
-
-    @Test
-    void anUnsetPathBecomesAMarkerThatNamesItsKey() {
-        assertThat(new io.github.mbero.mb2e.infrastructure.config.Mb2eProperties.Vault(null).path())
-                .isEqualTo("/mb2e-path-not-set/mb2e.vault.path");
-        assertThat(new io.github.mbero.mb2e.infrastructure.config.Mb2eProperties.Vault(" ").path())
-                .isEqualTo("/mb2e-path-not-set/mb2e.vault.path");
     }
 
     @Test

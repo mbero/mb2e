@@ -5,7 +5,6 @@ import io.github.mbero.mb2e.domain.model.JsonText;
 import io.github.mbero.mb2e.domain.model.PublishReport;
 import io.github.mbero.mb2e.domain.model.RunReport;
 import io.github.mbero.mb2e.domain.model.StepResult;
-import io.github.mbero.mb2e.domain.model.SyncReport;
 import java.util.List;
 
 /** Serializes reports as single JSON objects in which every field is always present. */
@@ -15,54 +14,44 @@ final class ReportJson {
     }
 
     static String of(BuildReport report) {
+        return build(report, true);
+    }
+
+    /** The build report; inside a run report it leaves out the trace id and dry-run flag the run states once. */
+    private static String build(BuildReport report, boolean standalone) {
         return "{\"outcome\":" + JsonText.quote(report.outcome())
-                + ",\"traceId\":" + JsonText.quote(report.traceId())
+                + (standalone ? ",\"traceId\":" + JsonText.quote(report.traceId()) : "")
                 + ",\"title\":" + JsonText.quote(report.title())
                 + ",\"detail\":" + JsonText.quote(report.detail())
+                + (standalone ? ",\"dryRun\":" + report.dryRun() : "")
+                + ",\"vaultPath\":" + JsonText.quote(report.vaultPath())
+                + ",\"templatePath\":" + JsonText.quote(report.templatePath())
+                + ",\"scannedCount\":" + report.scannedCount()
                 + ",\"noteCount\":" + report.noteCount()
                 + ",\"attachmentCount\":" + report.attachmentCount()
+                + ",\"attachments\":" + array(report.attachments())
                 + ",\"emptyNoteCount\":" + report.emptyNoteCount()
                 + ",\"missingLinkCount\":" + report.missingLinkCount()
+                + ",\"missingLinks\":" + array(report.missingLinks())
                 + ",\"missingAssetCount\":" + report.missingAssetCount()
+                + ",\"missingAssets\":" + array(report.missingAssets())
                 + ",\"outputBytes\":" + report.outputBytes()
                 + ",\"defaultNote\":" + JsonText.quote(report.defaultNote())
-                + ",\"warnings\":" + array(report.warnings())
-                + ",\"missingLinks\":" + array(report.missingLinks())
-                + ",\"missingAssets\":" + array(report.missingAssets()) + "}";
+                + ",\"warnings\":" + array(report.warnings()) + "}";
     }
 
-    /** Serializes the sync report: all fifteen fields plus the common ones. */
-    static String of(SyncReport report) {
-        return "{\"outcome\":" + JsonText.quote(report.outcome())
-                + ",\"traceId\":" + JsonText.quote(report.traceId())
-                + ",\"title\":" + JsonText.quote(report.title())
-                + ",\"detail\":" + JsonText.quote(report.detail())
-                + ",\"dryRun\":" + report.dryRun()
-                + ",\"vaultPath\":" + JsonText.quote(report.vaultPath())
-                + ",\"scannedCount\":" + report.scannedCount()
-                + ",\"selectedCount\":" + report.selectedCount()
-                + ",\"addedCount\":" + report.addedCount()
-                + ",\"updatedCount\":" + report.updatedCount()
-                + ",\"unchangedCount\":" + report.unchangedCount()
-                + ",\"deletedCount\":" + report.deletedCount()
-                + ",\"attachmentCount\":" + report.attachmentCount()
-                + ",\"missingAssetCount\":" + report.missingAssetCount()
-                + ",\"brokenLinkCount\":" + report.brokenLinkCount()
-                + ",\"added\":" + array(report.added())
-                + ",\"updated\":" + array(report.updated())
-                + ",\"deleted\":" + array(report.deleted())
-                + ",\"attachments\":" + array(report.attachments())
-                + ",\"missingAssets\":" + array(report.missingAssets())
-                + ",\"brokenLinks\":" + array(report.brokenLinks()) + "}";
-    }
-
-    /** Serializes the publication report with all twenty-one fields. */
+    /** Serializes the publication report with every field present. */
     static String of(PublishReport report) {
+        return publish(report, true);
+    }
+
+    /** The publication report; inside a run report it leaves out the trace id and dry-run flag the run states once. */
+    private static String publish(PublishReport report, boolean standalone) {
         return "{\"outcome\":" + JsonText.quote(report.outcome())
-                + ",\"traceId\":" + JsonText.quote(report.traceId())
+                + (standalone ? ",\"traceId\":" + JsonText.quote(report.traceId()) : "")
                 + ",\"title\":" + JsonText.quote(report.title())
                 + ",\"detail\":" + JsonText.quote(report.detail())
-                + ",\"dryRun\":" + report.dryRun()
+                + (standalone ? ",\"dryRun\":" + report.dryRun() : "")
                 + ",\"targetPath\":" + JsonText.quote(report.targetPath())
                 + ",\"branch\":" + JsonText.quote(report.branch())
                 + ",\"message\":" + JsonText.quote(report.message())
@@ -80,17 +69,15 @@ final class ReportJson {
                 + ",\"missingMedia\":" + array(report.missingMedia()) + "}";
     }
 
-    /** Serializes the pipeline report: a section per step, holding that step's report or just its outcome. */
+    /** Serializes the run report: a section per step, holding that step's report or just its outcome. */
     static String of(RunReport report) {
         return "{\"outcome\":" + JsonText.quote(report.outcome())
                 + ",\"traceId\":" + JsonText.quote(report.traceId())
                 + ",\"title\":" + JsonText.quote(report.title())
                 + ",\"detail\":" + JsonText.quote(report.detail())
                 + ",\"dryRun\":" + report.dryRun()
-                + ",\"openPath\":" + JsonText.quote(report.openPath())
-                + ",\"sync\":" + section(report.sync(), ReportJson::of)
-                + ",\"build\":" + section(report.build(), ReportJson::of)
-                + ",\"publish\":" + section(report.publish(), ReportJson::of) + "}";
+                + ",\"build\":" + section(report.build(), r -> build(r, false))
+                + ",\"publish\":" + section(report.publish(), r -> publish(r, false)) + "}";
     }
 
     private static <T> String section(StepResult<T> step, java.util.function.Function<T, String> document) {

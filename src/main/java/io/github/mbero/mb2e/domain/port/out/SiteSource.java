@@ -11,9 +11,6 @@ public interface SiteSource {
 
     boolean isDirectory(String path);
 
-    /** Returns the size in bytes of a file, or 0 when it does not exist. */
-    long size(String path);
-
     /**
      * Returns the bytes of a file.
      * @throws StoreFailure when the file cannot be read

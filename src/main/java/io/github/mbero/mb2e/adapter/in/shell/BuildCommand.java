@@ -7,7 +7,7 @@ import org.springframework.shell.command.annotation.Command;
 import org.springframework.shell.command.annotation.Option;
 
 /**
- * Shell command {@code build [--json] [--dry-run]} that renders the datasource into the bundle.
+ * Shell command {@code build [--json] [--dry-run]} that selects the tagged notes and assembles the site in memory.
  * <p>A success is printed on standard output. A refusal is one sentence on standard error
  * with exit status 1 and, with {@code --json}, also the refused report on standard output.
  */
@@ -22,7 +22,7 @@ public class BuildCommand {
         this.log = log;
     }
 
-    @Command(command = "build", description = "Build the site bundle from the datasource")
+    @Command(command = "build", description = "Select the tagged notes and assemble the site in memory; writes nothing")
     public String build(CommandContext context,
             @Option(longNames = "json", defaultValue = "false") boolean json,
             @Option(longNames = "dry-run", defaultValue = "false") boolean dryRun) {
@@ -45,12 +45,18 @@ public class BuildCommand {
     static String body(BuildReport report) {
         String nl = System.lineSeparator();
         StringBuilder out = new StringBuilder();
-        out.append("Notes:               ").append(report.noteCount()).append(nl)
+        if (report.dryRun()) {
+            out.append("[dry run] nothing is written anywhere").append(nl);
+        }
+        out.append("Vault:               ").append(report.vaultPath()).append(nl)
+                .append("Template:            ").append(report.templatePath()).append(nl)
+                .append("Notes scanned:       ").append(report.scannedCount()).append(nl)
+                .append("Notes:               ").append(report.noteCount()).append(nl)
                 .append("Attachments:         ").append(report.attachmentCount()).append(nl)
                 .append("Empty notes:         ").append(report.emptyNoteCount()).append(nl)
                 .append("Unresolved [[ ]]:    ").append(report.missingLinkCount()).append(nl)
                 .append("Missing files:       ").append(report.missingAssetCount()).append(nl)
-                .append("assets/js/content.js: ").append(report.outputBytes()).append(" bytes").append(nl)
+                .append("assets/js/data.js:   ").append(report.outputBytes()).append(" bytes").append(nl)
                 .append("Start note:          ").append(report.defaultNote()).append(nl);
         report.missingLinks().forEach(entry -> out.append("  unresolved link: ").append(entry).append(nl));
         report.missingAssets().forEach(entry -> out.append("  missing file: ").append(entry).append(nl));

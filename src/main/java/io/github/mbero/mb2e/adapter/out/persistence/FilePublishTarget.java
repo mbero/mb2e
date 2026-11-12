@@ -12,20 +12,20 @@ import java.util.stream.Stream;
 
 /**
  * Working tree of the publication target. It runs no process and knows nothing of git.
- * <p>The only deletes are single files below {@code assets} and the whole datasource
- * directory. A path that leaves the target is refused, and so is a write or delete
- * that would pass through a symbolic link inside the target.
+ * <p>The only deletes are single files below {@code assets} and the whole stale
+ * {@code datasource} directory of an earlier layout. A path that leaves the target is refused,
+ * and so is a write or delete that would pass through a symbolic link inside the target.
  */
 public class FilePublishTarget implements PublishTarget {
 
     private final String configured;
     private final Path template;
-    private final Path datasource;
+    private final Path vault;
 
-    public FilePublishTarget(String configured, Path template, Path datasource) {
+    public FilePublishTarget(String configured, Path template, Path vault) {
         this.configured = configured;
         this.template = template;
-        this.datasource = datasource;
+        this.vault = vault;
     }
 
     @Override
@@ -42,9 +42,6 @@ public class FilePublishTarget implements PublishTarget {
         if (path.getParent() == null) {
             return Kind.FILESYSTEM_ROOT;
         }
-        if (sameDirectory(path, template)) {
-            return Kind.TEMPLATE_DIRECTORY;
-        }
         if (!Files.exists(path)) {
             return Kind.MISSING;
         }
@@ -59,19 +56,19 @@ public class FilePublishTarget implements PublishTarget {
         if (configured == null || configured.isBlank()) {
             return Optional.empty();
         }
-        Path target = realOrNormalized(Path.of(configured));
-        Path source = realOrNormalized(template);
-        if (target.startsWith(source)) {
-            return Optional.of("The publication target '" + target + "' is inside the template directory '"
-                    + source + "'.");
-        }
-        if (source.startsWith(target)) {
-            return Optional.of("The template directory '" + source + "' is the publication target '" + target
+        Path destination = realOrNormalized(Path.of(configured));
+        Optional<String> withTemplate = overlapWith(destination, "template directory", template);
+        return withTemplate.isPresent() ? withTemplate : overlapWith(destination, "vault", vault);
+    }
+
+    private static Optional<String> overlapWith(Path destination, String label, Path other) {
+        Path source = realOrNormalized(other);
+        if (destination.startsWith(source)) {
+            return Optional.of("The publication target '" + destination + "' is the " + label + " '" + source
                     + "' or inside it.");
         }
-        Path data = datasource == null ? null : realOrNormalized(datasource);
-        if (data != null && data.startsWith(target)) {
-            return Optional.of("The datasource '" + data + "' is the publication target '" + target
+        if (source.startsWith(destination)) {
+            return Optional.of("The " + label + " '" + source + "' is the publication target '" + destination
                     + "' or inside it.");
         }
         return Optional.empty();
@@ -200,17 +197,6 @@ public class FilePublishTarget implements PublishTarget {
 
     private Path root() {
         return resolved();
-    }
-
-    private static boolean sameDirectory(Path a, Path b) {
-        try {
-            if (Files.exists(a) && Files.exists(b)) {
-                return Files.isSameFile(a, b);
-            }
-        } catch (IOException ignored) {
-            // fall back to the path text
-        }
-        return a.equals(b.toAbsolutePath().normalize());
     }
 
     /** A path inside the target, never the target itself and never inside .git. */

@@ -13,19 +13,24 @@ class UsageCommandTest {
 
     private static final List<String> RETIRED = List.of(
             "--vault", "--tag", "--inline-tags", "--target", "--dest",
-            "--no-prune", "--yes", "--with-datasource", "--force");
+            "--no-prune", "--yes", "--with-datasource", "--force", "--skip-sync", "--skip-build");
 
     private static final Set<String> ACCEPTED = Set.of(
-            "--json", "--dry-run", "--skip-sync", "--skip-build", "--no-publish");
+            "--json", "--dry-run", "--no-publish");
 
     private final String text = new UsageCommand().text();
 
     @Test
     void namesEachWorkingCommandFirstOnItsOwnLine() {
-        for (String command : List.of("run", "sync", "build", "publish")) {
+        for (String command : List.of("run", "build", "publish")) {
             assertThat(text.lines().anyMatch(l -> l.strip().startsWith(command + " ")))
                     .as("a line starting with %s", command).isTrue();
         }
+    }
+
+    @Test
+    void namesNoSyncCommand() {
+        assertThat(text.lines().noneMatch(l -> l.startsWith("  sync "))).isTrue();
     }
 
     @Test
