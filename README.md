@@ -193,6 +193,93 @@ Everything else in the repo (`README.md`, `CNAME`, `.github/`) is left alone. Be
 
 The template's folder `assets/img/notes/` belongs to mb2e, so a template that has files there is refused.
 
+## Bring your own template
+
+`mb2e.template.path` can point at **any** folder that follows a small contract. The one shipped with mb2e lives in [`src/main/resources/template/mbs-blog`](src/main/resources/template/mbs-blog). Copy it and restyle it, or build your own from scratch.
+
+### Folder layout
+
+```
+my-template/
+├── index.html              REQUIRED  the one page of the site
+└── assets/
+    ├── js/
+    │   ├── app.js          REQUIRED  renders the page from window.BLOG_DATA
+    │   └── data.js         optional  sample data for local design work; never published
+    ├── css/…               optional  anything you like
+    └── img/…               optional  anything you like, EXCEPT img/notes/
+```
+
+| Rule | What happens if you break it |
+|---|---|
+| `index.html` exists at the template root | `build` refuses: *index.html is missing* |
+| `assets/js/app.js` exists | `build` refuses: *assets/js/app.js is missing* |
+| `app.js` contains the text `case 'html'` (it renders html blocks, see below) | `build` refuses: *not a site template* |
+| `assets/img/notes/` is empty or absent | `build` refuses: that folder belongs to mb2e, it writes the note images there |
+
+### What gets published, and what doesn't
+
+- **Published:** `index.html` and every file under `assets/`.
+- **Not published:** anything else at the template root (a `README.md`, a second `.html` page, `favicon.ico`…). Put extra files under `assets/`.
+- **Never published:** any `.md` file, `.DS_Store`, and the template's own `assets/js/data.js` (mb2e writes a generated one in its place).
+- **Mirrored:** the Pages repo's `assets/` ends up holding exactly the template's `assets/` plus the generated files. A file you delete from the template's `assets/` is deleted from the Pages repo on the next `publish`.
+
+### Wiring in `index.html`
+
+Load the data before the app, with relative paths (the site must also work from `file://`):
+
+```html
+<script src="assets/js/data.js"></script>
+<script src="assets/js/app.js"></script>
+```
+
+### The data your `app.js` gets
+
+mb2e writes `assets/js/data.js` as one global object:
+
+```js
+window.BLOG_DATA = {
+  defaultNote: "about",                 // the note to open when the URL has no #/…
+  TREE: [                               // the vault folders, in display order
+    { name: "Java", children: [
+      { name: "Collections", children: [
+        { note: "Java/Collections/Cheatsheet" }      // a leaf = a note id
+      ] }
+    ] }
+  ],
+  NOTES: {
+    "Java/Collections/Cheatsheet": {
+      title: "Collections Framework — cheatsheet",   // front matter title, else the file name
+      category: "Java/Collections",                  // the note's folder in the vault
+      date: "2026-11-06",                            // front matter date, else ""
+      tags: ["java", "blog-ready"],                  // front matter tags
+      blocks: [ { type: "html", html: "<h2>…</h2><p>…</p>" } ]
+    },
+    "about": { /* about.md: in NOTES, never in TREE */ }
+  }
+};
+```
+
+What your `app.js` has to handle:
+
+- **Exactly one block per note**, `{ type: "html", html: "…" }`, holding the whole note already rendered to HTML. Insert it as HTML (for example `div.innerHTML = block.html`). That `case 'html'` is also the marker mb2e checks for.
+- **Note ids are vault paths without `.md`**, with `/` between folders. Links between notes arrive as `<a href="#/Java/Collections/Cheatsheet">` (each path segment URL-encoded), so route on `location.hash`.
+- **The About page** is `NOTES.about` and is not in `TREE`; link to it yourself (mbs-blog uses `#/about` at the bottom of the sidebar). It can be missing, so guard against `NOTES.about === undefined`.
+- **`defaultNote`** always names a published note: mb2e checks `mb2e.default-note` and falls back to the first note of `TREE` (with a warning) if that note isn't published. Use it when the URL has no `#/…`, or names an unknown note.
+
+### HTML inside a note, for your CSS
+
+The rendered notes use plain tags (`h1`–`h6`, `p`, `ul`/`ol`, `blockquote`, `pre > code`, `table`, `img`, `a`) plus a few classes worth styling:
+
+| Markup | Meaning |
+|---|---|
+| `<code class="language-java">` | a fenced code block with a language |
+| `<div class="table-wrap"><table>…` | a table, wrapped so it can scroll sideways |
+| `<span class="missing-link" title="…">` | a link to a note that isn't published, or to a missing attachment |
+| `<img src="assets/img/notes/…">` | an image from the vault, copied next to the site |
+
+The mbs-blog stylesheet styles all of them under `.prose`, a good starting point.
+
 ## Working locally, step by step
 
 ```mermaid
