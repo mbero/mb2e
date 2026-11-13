@@ -38,7 +38,7 @@ public class PublishService implements PublishUseCase {
     private static final String DATA_SCRIPT = "assets/js/data.js";
     private static final String STALE_DATASOURCE = "datasource";
     private static final String DS_STORE = ".DS_Store";
-    private static final String COMMIT_MESSAGE = "chore(content): odśwież Knowledge Hub";
+    private static final String COMMIT_MESSAGE = "chore(content): refresh Knowledge Hub";
 
     private final BuildUseCase build;
     private final VaultReader vault;
