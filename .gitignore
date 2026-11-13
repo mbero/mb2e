@@ -4,3 +4,15 @@ target/
 .vscode/
 .DS_Store
 application_local_paths.yaml
+
+# Knowledge base for AI agents; kept local for now
+AGENTS.md
+CLAUDE.md
+.agents/
+.claude/
+.github/workflows/knowledge-base.yml
+.editorconfig
+.template-version
+bootstrap/
+docs/
+profiles/
