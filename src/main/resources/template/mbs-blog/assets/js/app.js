@@ -21,7 +21,7 @@
 
   var filterText = '';
 
-  /* ---------- Pomocnicze ---------- */
+  /* ---------- Helpers ---------- */
 
   function el(tag, attrs, children) {
     var node = document.createElement(tag);
@@ -40,7 +40,7 @@
 
   function svg(markup) {
     var wrap = document.createElement('span');
-    wrap.innerHTML = markup; // stała, zaufana treść ikony
+    wrap.innerHTML = markup; // constant, trusted icon markup
     return wrap.firstChild;
   }
 
@@ -57,25 +57,25 @@
     return NOTES[id] ? id : DATA.defaultNote;
   }
 
-  /* ---------- Stan rozwinięcia folderów ---------- */
+  /* ---------- Folder expansion state ---------- */
 
   function loadExpanded() {
     try {
       var raw = localStorage.getItem(STORAGE_KEY);
       if (raw) return new Set(JSON.parse(raw));
-    } catch (e) { /* brak dostępu do storage – użyj domyślnych */ }
+    } catch (e) { /* no access to storage – use the defaults */ }
     return new Set(['AWS', 'Databases']);
   }
 
   function saveExpanded() {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(expanded)));
-    } catch (e) { /* ignoruj */ }
+    } catch (e) { /* ignore */ }
   }
 
   var expanded = loadExpanded();
 
-  /* Ścieżki folderów prowadzące do notatki (żeby ją odsłonić w drzewie) */
+  /* Folder paths that lead to a note (to reveal it in the tree) */
   function ancestorsOf(noteId) {
     var result = null;
     function walk(nodes, parents) {
@@ -92,7 +92,7 @@
     return result || [];
   }
 
-  /* Kolejność notatek (do „Poprzednia / Następna”) */
+  /* Note order (for "Previous / Next") */
   function noteOrder() {
     var order = [];
     function walk(nodes) {
@@ -105,13 +105,13 @@
     return order;
   }
 
-  /* ---------- Filtr ---------- */
+  /* ---------- Filter ---------- */
 
   function matches(text) {
     return String(text).toLowerCase().indexOf(filterText) !== -1;
   }
 
-  /* Zwraca true, gdy gałąź zawiera notatkę pasującą do filtra */
+  /* Returns true when the branch holds a note that matches the filter */
   function branchMatches(node) {
     if (node.note) {
       var note = NOTES[node.note];
@@ -121,10 +121,10 @@
     return (node.children || []).some(branchMatches);
   }
 
-  /* ---------- Drzewo ---------- */
+  /* ---------- Tree ---------- */
 
   function renderTree(activeId) {
-    /* forced = folder pasuje nazwą, więc pokazujemy całą jego zawartość */
+    /* forced = the folder name matches, so its whole content is shown */
     function build(nodes, parentPath, forced) {
       var ul = el('ul', parentPath ? { role: 'group' } : null);
 
@@ -193,7 +193,7 @@
     }
   }
 
-  /* ---------- Artykuł ---------- */
+  /* ---------- Article ---------- */
 
   function countWords(note) {
     var words = 0;
@@ -287,7 +287,7 @@
     document.title = note.title + ' — MBS. Knowledge Hub Blog';
   }
 
-  /* ---------- Panel mobilny ---------- */
+  /* ---------- Mobile panel ---------- */
 
   function setDrawer(open) {
     els.sidebar.classList.toggle('is-open', open);

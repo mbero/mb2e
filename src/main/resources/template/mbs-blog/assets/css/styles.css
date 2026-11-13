@@ -1,16 +1,16 @@
 /* ==========================================================
    MBS. Knowledge Hub Blog
-   Typografia wg specyfikacji MBS.: Fira Code (UI, nagłówki,
-   metadane, kod) + Inter (treść artykułów).
+   Typography per the MBS. specification: Fira Code (UI, headings,
+   metadata, code) + Inter (article text).
    ========================================================== */
 
 :root {
-  /* Kolory bazowe (specyfikacja MBS.) */
+  /* Base colours (MBS. specification) */
   --color-bg: #ffffff;
   --color-fg: #000000;
   --color-border: #000000;
 
-  /* Odcienie pomocnicze */
+  /* Helper shades */
   --color-text: #111111;
   --color-body: #1f1f1f;
   --color-lead: #3d3d3d;
@@ -25,7 +25,7 @@
   --color-code-bg: #111111;
   --color-code-fg: #f2f2f2;
 
-  /* Fonty (specyfikacja MBS.) */
+  /* Fonts (MBS. specification) */
   --font-mono: 'Fira Code', 'JetBrains Mono', monospace;
   --font-sans: 'Inter', system-ui, sans-serif;
 
@@ -87,7 +87,7 @@ a:hover { color: var(--color-fg); }
   min-width: 0;
 }
 
-/* ---------- Sidebar (drzewo w stylu Obsidiana) ---------- */
+/* ---------- Sidebar (Obsidian-style tree) ---------- */
 
 .sidebar {
   position: sticky;
@@ -108,7 +108,7 @@ a:hover { color: var(--color-fg); }
 .sidebar__brand img {
   display: block;
   width: 180px;
-  mix-blend-mode: multiply; /* białe tło JPEG-a znika na szarym panelu */
+  mix-blend-mode: multiply; /* the white JPEG background disappears on the grey panel */
 }
 
 .tree {
@@ -123,7 +123,7 @@ a:hover { color: var(--color-fg); }
   padding: 0;
 }
 
-/* Linia wcięcia dla zagnieżdżonych poziomów */
+/* Indent line for nested levels */
 .tree ul ul {
   margin-left: 15px;
   border-left: 1px solid var(--color-guide);
@@ -205,7 +205,7 @@ a:hover { color: var(--color-fg); }
 .sidebar__about:hover { background: var(--color-hover); color: var(--color-fg); }
 .sidebar__about[aria-current="page"] { background: var(--color-active); color: var(--color-fg); }
 
-/* ---------- Artykuł ---------- */
+/* ---------- Article ---------- */
 
 .article {
   flex: 1 0 auto;
@@ -261,7 +261,7 @@ a:hover { color: var(--color-fg); }
 .article__tags { display: flex; flex-wrap: wrap; gap: 10px; }
 .article__tag { color: var(--color-text); font-weight: 500; }
 
-/* ---------- Treść (prose) ---------- */
+/* ---------- Content (prose) ---------- */
 
 .prose {
   margin-top: 16px;
@@ -315,7 +315,7 @@ a:hover { color: var(--color-fg); }
 }
 .prose .related a:hover { text-decoration-thickness: 2px; }
 
-/* ---------- Poprzednia / Następna ---------- */
+/* ---------- Previous / Next ---------- */
 
 .pager {
   display: grid;
@@ -365,7 +365,7 @@ a:hover { color: var(--color-fg); }
   overflow-wrap: anywhere;
 }
 
-/* ---------- Stopka ---------- */
+/* ---------- Footer ---------- */
 
 .site-footer {
   display: flex;
@@ -380,13 +380,13 @@ a:hover { color: var(--color-fg); }
 }
 .site-footer__brand { color: var(--color-text); font-weight: 600; }
 
-/* ---------- Pasek mobilny (domyślnie ukryty) ---------- */
+/* ---------- Mobile bar (hidden by default) ---------- */
 
 .topbar { display: none; }
 .scrim { display: none; }
 
 /* ==========================================================
-   Telefon / wąski ekran: sidebar jako wysuwany panel
+   Phone / narrow screen: the sidebar as a slide-out panel
    ========================================================== */
 
 @media (max-width: 900px) {
@@ -442,7 +442,7 @@ a:hover { color: var(--color-fg); }
   }
   .scrim[hidden] { display: none; }
 
-  .tree__row { height: 40px; } /* większe cele dotykowe */
+  .tree__row { height: 40px; } /* larger touch targets */
 
   .article { padding: 40px 20px 64px; }
   .article__title { font-size: 32px; }
@@ -462,9 +462,9 @@ a:hover { color: var(--color-fg); }
 
 
 /* ==========================================================
-   Dodatki silnika mbs_kh_engine
-   Elementy, których nie było w statycznym szablonie:
-   filtr drzewa, pełny zakres Markdownu, komunikaty stanu.
+   Additions for generated content
+   Elements beyond the static layout:
+   the tree filter, the full Markdown range, the state messages.
    ========================================================== */
 
 .visually-hidden {
@@ -479,7 +479,7 @@ a:hover { color: var(--color-fg); }
   border: 0;
 }
 
-/* ---------- Filtr notatek ---------- */
+/* ---------- Note filter ---------- */
 
 .sidebar__filter {
   padding: 12px 14px;
@@ -503,7 +503,7 @@ a:hover { color: var(--color-fg); }
   outline: none;
 }
 
-/* ---------- Komunikaty stanu ---------- */
+/* ---------- State messages ---------- */
 
 .prose .notice {
   padding: 14px 16px;
@@ -521,7 +521,7 @@ a:hover { color: var(--color-fg); }
   cursor: help;
 }
 
-/* ---------- Nagłówki poza h2 ---------- */
+/* ---------- Headings other than h2 ---------- */
 
 .prose h1,
 .prose h3,
@@ -541,7 +541,7 @@ a:hover { color: var(--color-fg); }
 .prose h5,
 .prose h6 { font-size: 14px; color: var(--color-muted); }
 
-/* ---------- Listy numerowane i zagnieżdżone ---------- */
+/* ---------- Numbered and nested lists ---------- */
 
 .prose ol {
   margin: 16px 0;
@@ -556,7 +556,7 @@ a:hover { color: var(--color-fg); }
 }
 .prose ul ul { list-style: circle; }
 
-/* ---------- Kod w linii ---------- */
+/* ---------- Inline code ---------- */
 
 .prose code {
   padding: 1px 5px;
@@ -575,7 +575,7 @@ a:hover { color: var(--color-fg); }
   color: inherit;
 }
 
-/* ---------- Cytat ---------- */
+/* ---------- Quote ---------- */
 
 .prose blockquote {
   margin: 24px 0;
@@ -586,7 +586,7 @@ a:hover { color: var(--color-fg); }
 .prose blockquote > :first-child { margin-top: 0; }
 .prose blockquote > :last-child { margin-bottom: 0; }
 
-/* ---------- Tabela ---------- */
+/* ---------- Table ---------- */
 
 .prose .table-wrap {
   margin: 24px 0;
@@ -618,7 +618,7 @@ a:hover { color: var(--color-fg); }
 }
 .prose tbody tr:last-child td { border-bottom: 0; }
 
-/* ---------- Pozostałe ---------- */
+/* ---------- Other ---------- */
 
 .prose hr {
   margin: 40px 0;
