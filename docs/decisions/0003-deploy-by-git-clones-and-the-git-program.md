@@ -3,7 +3,10 @@ title: Deploy with two shallow clones and the git program
 type: decision
 status: current
 updated: 2026-11-25
-sources: [AS_A_SERVICE_ARCHITECTURE_PLAN.md]
+sources:
+  - src/main/java/io/github/mbero/mb2e/domain/service/DeployService.java
+  - src/main/java/io/github/mbero/mb2e/adapter/out/external/GitWorkspaceProgram.java
+  - src/main/java/io/github/mbero/mb2e/adapter/out/external/GitCredentials.java
 tags: [server-mode, git, security]
 ---
 

@@ -3,7 +3,10 @@ title: Run one container on one volume with a read-only root
 type: decision
 status: current
 updated: 2026-11-25
-sources: [AS_A_SERVICE_ARCHITECTURE_PLAN.md]
+sources:
+  - Dockerfile
+  - docker-compose.yml
+  - src/main/java/io/github/mbero/mb2e/infrastructure/config/WorkspaceLock.java
 tags: [server-mode, docker, operations]
 ---
 

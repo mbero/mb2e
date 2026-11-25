@@ -3,7 +3,9 @@ title: Accept a signed webhook and run one deployment at a time
 type: decision
 status: current
 updated: 2026-11-25
-sources: [AS_A_SERVICE_ARCHITECTURE_PLAN.md]
+sources:
+  - src/main/java/io/github/mbero/mb2e/adapter/in/web/GithubWebhookController.java
+  - src/main/java/io/github/mbero/mb2e/adapter/in/web/DeployQueue.java
 tags: [server-mode, webhook, security]
 ---
 

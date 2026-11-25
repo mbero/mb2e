@@ -3,7 +3,10 @@ title: Run the server mode from the same jar and separate the modes with a prope
 type: decision
 status: current
 updated: 2026-11-25
-sources: [AS_A_SERVICE_ARCHITECTURE_PLAN.md]
+sources:
+  - src/main/java/io/github/mbero/mb2e/Mb2eEnvironment.java
+  - src/main/java/io/github/mbero/mb2e/ServerLauncher.java
+  - src/main/java/io/github/mbero/mb2e/infrastructure/config/ShellConfig.java
 tags: [server-mode, spring-shell, configuration]
 ---
 
