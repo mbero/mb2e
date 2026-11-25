@@ -1,0 +1,13 @@
+target/
+.git/
+.idea/
+.vscode/
+docs/
+.agents/
+.claude/
+bootstrap/
+profiles/
+application_local_paths.yaml
+.env
+*.iml
+.DS_Store

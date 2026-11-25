@@ -1,0 +1,20 @@
+# One service, one replica: the workspace lock refuses a second one on the same volume.
+services:
+  mb2e:
+    build: .
+    image: mb2e:dev
+    env_file: .env
+    ports:
+      # Plain HTTP on the loopback only; a reverse proxy on the host terminates TLS.
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - mb2e-workspace:/var/lib/mb2e
+    restart: unless-stopped
+    # Longer than the 60 s that a run in progress may take to finish.
+    stop_grace_period: 75s
+    read_only: true
+    tmpfs:
+      - /tmp
+
+volumes:
+  mb2e-workspace:
