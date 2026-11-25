@@ -32,7 +32,7 @@ final class GitRunner {
     /**
      * Runs {@code git} with the given arguments and masks every non-blank secret in the texts it returns.
      *
-     * @throws GitFailure when git cannot start, exceeds the budget, or is interrupted
+     * @throws GitFailure when git cannot start or is interrupted; a {@code GitTimeout} when it exceeds the budget
      */
     Result run(Path directory, Duration budget, Map<String, String> extraEnvironment, List<String> secrets,
             String... arguments) {
@@ -57,8 +57,8 @@ final class GitRunner {
             CompletableFuture<String> err = read(process.getErrorStream());
             if (!process.waitFor(budget.toMillis(), TimeUnit.MILLISECONDS)) {
                 kill(process);
-                throw new GitFailure("git " + what + " did not answer within " + budget.toMillis() + " ms in "
-                        + directory, null);
+                throw new GitTimeout("git " + what + " did not answer within " + budget.toMillis() + " ms in "
+                        + directory);
             }
             return new Result(process.exitValue(), mask(drain(out), secrets), mask(drain(err), secrets));
         } catch (IOException failure) {

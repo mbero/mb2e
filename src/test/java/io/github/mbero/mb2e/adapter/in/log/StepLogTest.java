@@ -9,6 +9,7 @@ import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
 import io.github.mbero.mb2e.domain.model.BuildReport;
 import io.github.mbero.mb2e.domain.model.ConfiguredPaths;
+import io.github.mbero.mb2e.domain.model.DeployReport;
 import io.github.mbero.mb2e.domain.model.PublishReport;
 import io.github.mbero.mb2e.domain.model.RunReport;
 import io.github.mbero.mb2e.domain.model.StepResult;
@@ -103,5 +104,16 @@ class StepLogTest {
         new StepLog(blocker.resolve("sub/log").toString()).publish(published());
         assertThat(events.list).extracting(ILoggingEvent::getFormattedMessage)
                 .anyMatch(message -> message.contains("cannot be written"));
+    }
+
+    @Test
+    void aDeploymentWritesOneLineWithAttemptsAndCommits() {
+        new StepLog("").deploy(new DeployReport("t-9", "deployed", null, null, "push", "abc123", "def456", 2, null));
+        new StepLog("").deploy(new DeployReport("t-10", "failed", "Git failed", "boom", "poll", null, null, 1, null));
+        assertThat(events.list).extracting(ILoggingEvent::getFormattedMessage).satisfiesExactly(
+                a -> assertThat(a).contains("step=deploy outcome=deployed traceId=t-9 attempts=2",
+                        "sourceCommit=abc123", "targetCommit=def456"),
+                b -> assertThat(b).contains("step=deploy outcome=failed", "sourceCommit=-", "targetCommit=-",
+                        "title=\"Git failed\""));
     }
 }

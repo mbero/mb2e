@@ -1,6 +1,7 @@
 package io.github.mbero.mb2e.adapter.in.log;
 
 import io.github.mbero.mb2e.domain.model.BuildReport;
+import io.github.mbero.mb2e.domain.model.DeployReport;
 import io.github.mbero.mb2e.domain.model.PublishReport;
 import io.github.mbero.mb2e.domain.model.RunReport;
 import io.github.mbero.mb2e.domain.model.StepResult;
@@ -57,6 +58,17 @@ public class StepLog {
                 "dryRun=" + report.dryRun() + " changed=" + report.changedFileCount() + " deleted="
                         + report.deletedCount() + " media=" + report.mediaCount() + " mediaDeleted="
                         + report.mediaDeletedCount() + " mediaMissing=" + report.missingMediaCount());
+    }
+
+    /** Logs the outcome of one deployment with its attempts and the commits it used. */
+    public void deploy(DeployReport report) {
+        line("deploy", report.outcome(), report.traceId(), report.title(), report.detail(),
+                "attempts=" + report.attempts() + " sourceCommit=" + commit(report.sourceCommit())
+                        + " targetCommit=" + commit(report.targetCommit()));
+    }
+
+    private static String commit(String id) {
+        return id == null || id.isBlank() ? "-" : id;
     }
 
     /** Logs the two steps of a run; a step that did not happen shows as skipped or not_run. */
