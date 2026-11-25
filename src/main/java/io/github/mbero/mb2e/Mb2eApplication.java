@@ -5,6 +5,7 @@ import io.github.mbero.mb2e.adapter.in.shell.RefusalReporter;
 import java.util.Optional;
 import org.springframework.boot.Banner;
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.shell.boot.StandardCommandsAutoConfiguration;
@@ -21,7 +22,11 @@ public class Mb2eApplication {
     static final int REFUSED = 1;
 
     public static void main(String[] args) {
-        System.exit(run(args));
+        int code = run(args);
+        // A started server keeps the process alive through its web server; every other run ends here.
+        if (code != 0 || !ServerLauncher.isServe(args)) {
+            System.exit(code);
+        }
     }
 
     /**
@@ -30,6 +35,9 @@ public class Mb2eApplication {
      * parameter its own code (2), so no failure is left to its mapping.
      */
     static int run(String... args) {
+        if (ServerLauncher.isServe(args)) {
+            return ServerLauncher.start(args);
+        }
         Optional<String> refusal = ArgumentGuard.refusal(args);
         if (refusal.isPresent()) {
             System.err.println(refusal.get());
@@ -50,6 +58,8 @@ public class Mb2eApplication {
         // Configuration comes only from the packaged application.yaml and
         // SPRING_APPLICATION_JSON (see Mb2eEnvironment).
         application.setEnvironment(environment);
+        // The CLI never starts a web server, whatever is on the classpath.
+        application.setWebApplicationType(WebApplicationType.NONE);
         // No process argument is a configuration property: every word on the command
         // line is a command or a parameter, or it is refused.
         application.setAddCommandLineProperties(false);

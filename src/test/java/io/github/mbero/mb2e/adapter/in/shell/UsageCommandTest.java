@@ -22,10 +22,16 @@ class UsageCommandTest {
 
     @Test
     void namesEachWorkingCommandFirstOnItsOwnLine() {
-        for (String command : List.of("run", "build", "publish")) {
+        for (String command : List.of("run", "build", "publish", "serve")) {
             assertThat(text.lines().anyMatch(l -> l.strip().startsWith(command + " ")))
                     .as("a line starting with %s", command).isTrue();
         }
+    }
+
+    @Test
+    void theServeLineNamesTheVariablesAndStatesItIsCommandLineOnly() {
+        assertThat(text).contains("serve    start the webhook server (configured by MB2E_* variables)",
+                "serve works from the command line only");
     }
 
     @Test

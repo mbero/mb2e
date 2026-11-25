@@ -18,6 +18,7 @@ public class UsageCommand {
             "  build    select the tagged notes and assemble the site in memory; writes nothing",
             "  publish  build the site and mirror it into the target repository",
             "  run      build and publish, in that order",
+            "  serve    start the webhook server (configured by MB2E_* variables)",
             "",
             "Parameters:",
             "  --json         print one JSON report document on standard output",
@@ -27,6 +28,8 @@ public class UsageCommand {
             "Other listings:",
             "  help     the shell's own listing",
             "  usage    this text",
+            "",
+            "serve works from the command line only, and it takes no parameter.",
             "",
             "Exit status: 0 when the operation succeeded, 1 when it was refused.",
             "Paths, tag and the other values are configuration, not parameters.");

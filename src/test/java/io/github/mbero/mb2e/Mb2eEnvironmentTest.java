@@ -79,4 +79,18 @@ class Mb2eEnvironmentTest {
         assertThat(Mb2eEnvironment.create(null).getProperty("spring.profiles.active")).isNull();
         assertThat(dir).isDirectory();
     }
+
+    @Test
+    void theServerEnvironmentFixesTheModeAndIgnoresTheLocalPathsFile() {
+        Mb2eEnvironment server = Mb2eEnvironment.forServer("{\"mb2e.mode\":\"cli\",\"mb2e.tag\":\"x\"}",
+                java.util.Map.of("mb2e.tag", "from-server", "server.port", 9090));
+        assertThat(server.getProperty("mb2e.mode")).isEqualTo("server");
+        assertThat(server.getProperty("spring.config.location")).isEqualTo("classpath:/application.yaml");
+        assertThat(server.getProperty("spring.main.web-application-type")).isEqualTo("servlet");
+        assertThat(server.getProperty("mb2e.tag")).isEqualTo("from-server");
+        assertThat(server.getProperty("server.port")).isEqualTo("9090");
+        assertThat(server.getProperty("spring.shell.interactive.enabled")).isEqualTo("false");
+        assertThat(server.getProperty("server.error.include-stacktrace")).isEqualTo("never");
+        assertThat(server.getProperty("PATH")).isNull();
+    }
 }

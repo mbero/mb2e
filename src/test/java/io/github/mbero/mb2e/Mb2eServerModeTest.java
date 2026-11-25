@@ -10,9 +10,18 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ApplicationContext;
 
-/** In the server mode the shell commands do not exist; the shell runners stay off, as in the CLI tests. */
+/** In the server mode the shell commands do not exist and the server beans do; the shell runners stay off. */
 @SpringBootTest(properties = {
         "mb2e.mode=server",
+        "mb2e.server.workspace=target/test-workspaces/server-mode-test",
+        "mb2e.server.sync-on-start=false",
+        "mb2e.server.source.url=https://github.com/me/notes",
+        "mb2e.server.source.token=source-token",
+        "mb2e.server.target.url=https://github.com/me/me.github.io",
+        "mb2e.server.target.token=target-token",
+        "mb2e.server.webhook.secret=0123456789abcdef0123456789abcdef",
+        "mb2e.server.git.user-name=Bot",
+        "mb2e.server.git.user-email=bot@example.com",
         "spring.shell.interactive.enabled=false",
         "spring.shell.noninteractive.enabled=false",
         "spring.shell.script.enabled=false"})
@@ -20,6 +29,17 @@ class Mb2eServerModeTest {
 
     @Autowired
     ApplicationContext context;
+
+    @Test
+    void theServerBeansExistAndTheyHideTheirSecrets() {
+        assertThat(context.getBeansOfType(io.github.mbero.mb2e.adapter.in.web.DeployQueue.class)).hasSize(1);
+        assertThat(context.getBeansOfType(io.github.mbero.mb2e.adapter.in.web.GithubWebhookController.class)).hasSize(1);
+        assertThat(context.getBeansOfType(io.github.mbero.mb2e.adapter.in.web.HealthController.class)).hasSize(1);
+        assertThat(context.getBeansOfType(io.github.mbero.mb2e.domain.port.out.GitWorkspace.class)).hasSize(2);
+        assertThat(context.getBeansOfType(io.github.mbero.mb2e.adapter.in.web.PollScheduler.class)).isEmpty();
+        assertThat(context.getBean(io.github.mbero.mb2e.infrastructure.config.ServerProperties.class).toString())
+                .doesNotContain("source-token", "target-token", "0123456789abcdef");
+    }
 
     @Test
     void noShellCommandBeanExists() {

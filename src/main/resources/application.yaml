@@ -2,6 +2,8 @@ spring:
   main:
     # banner-mode is set in Mb2eApplication: the logo shows in the interactive shell only.
     log-startup-info: false
+    # The CLI starts no web server. The server mode sets the servlet type in Mb2eEnvironment.forServer.
+    web-application-type: none
   shell:
     # Spring Shell's built-in commands and its --help option are removed in code
     # (Mb2eApplication, ShellConfig), not switched off here, so no property in
