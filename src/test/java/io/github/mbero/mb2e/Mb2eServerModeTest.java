@@ -42,6 +42,13 @@ class Mb2eServerModeTest {
     }
 
     @Test
+    void buildConfigNeverReferencesAGitWorkspace() throws Exception {
+        assertThat(java.nio.file.Files.readString(java.nio.file.Path.of(
+                "src/main/java/io/github/mbero/mb2e/infrastructure/config/BuildConfig.java")))
+                .doesNotContain("GitWorkspace");
+    }
+
+    @Test
     void noShellCommandBeanExists() {
         assertThat(context.getBeansOfType(RunCommand.class)).isEmpty();
         assertThat(context.getBeansOfType(BuildCommand.class)).isEmpty();
