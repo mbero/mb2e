@@ -17,6 +17,7 @@ public record Mb2eProperties(
         @DefaultValue("false") boolean inlineTags,
         @DefaultValue("about") String defaultNote,
         @DefaultValue("false") boolean force,
+        @DefaultValue("chore(content): refresh Knowledge Hub") String commitMessage,
         @DefaultValue Log log) {
 
     /** One configured directory. */

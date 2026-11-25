@@ -39,7 +39,7 @@ class PublishServiceTest {
     private PublishService service(boolean force, ConfiguredPaths paths) {
         when(target.location()).thenReturn("/t");
         when(target.inspect()).thenReturn(PublishTarget.Kind.USABLE);
-        return new PublishService(build, vault, site, target, git, paths, force);
+        return new PublishService(build, vault, site, target, git, paths, force, "chore(content): refresh Knowledge Hub");
     }
 
     private PublishService service(boolean force) {

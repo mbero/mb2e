@@ -17,6 +17,9 @@ final class Mb2eEnvironment extends StandardEnvironment {
 
     static final String JSON_VARIABLE = "SPRING_APPLICATION_JSON";
     static final String PREFIX = "mb2e.";
+    /** Property that selects the mode of the run; only this class sets it, so no other source can. */
+    static final String MODE = "mb2e.mode";
+    static final String CLI_MODE = "cli";
     /** Variable that names the local paths file; unset means the file in the working directory. */
     static final String LOCAL_FILE_VARIABLE = "MB2E_CONFIG";
     static final String LOCAL_FILE = "application_local_paths.yaml";
@@ -64,6 +67,7 @@ final class Mb2eEnvironment extends StandardEnvironment {
         // The packaged file, then the optional local paths file, which wins over it.
         String local = localFile == null || localFile.isBlank() ? LOCAL_FILE : localFile;
         Map<String, Object> fixed = new LinkedHashMap<>();
+        fixed.put(MODE, CLI_MODE);
         fixed.put("spring.config.location", "classpath:/application.yaml,optional:file:" + local);
         Mb2eEnvironment environment = new Mb2eEnvironment();
         // The JSON keys outrank the packaged file; the fixed location outranks both.

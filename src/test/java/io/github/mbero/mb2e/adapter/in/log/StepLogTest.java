@@ -1,4 +1,4 @@
-package io.github.mbero.mb2e.adapter.in.shell;
+package io.github.mbero.mb2e.adapter.in.log;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -92,7 +92,7 @@ class StepLogTest {
 
         String text = Files.readString(file);
         assertThat(text).contains("step=publish", "traceId=t-1", "step=build outcome=failed", "traceId=",
-                "java.lang.IllegalStateException: boom", "at io.github.mbero.mb2e.adapter.in.shell.StepLogTest");
+                "java.lang.IllegalStateException: boom", "at io.github.mbero.mb2e.adapter.in.log.StepLogTest");
         assertThat(events.list).extracting(ILoggingEvent::getFormattedMessage)
                 .anyMatch(message -> message.contains("step=build outcome=failed") && !message.contains("\tat "));
     }

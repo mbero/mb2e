@@ -27,6 +27,7 @@ class Mb2ePropertiesTest {
         assertThat(properties.inlineTags()).isFalse();
         assertThat(properties.defaultNote()).isEqualTo("about");
         assertThat(properties.force()).isFalse();
+        assertThat(properties.commitMessage()).isEqualTo("chore(content): refresh Knowledge Hub");
         assertThat(properties.log().file()).isEmpty();
     }
 
@@ -35,7 +36,7 @@ class Mb2ePropertiesTest {
         Mb2eProperties properties = bind(Map.of(
                 "mb2e.vault.path", "/v", "mb2e.template.path", "/tpl", "mb2e.target.path", "/t",
                 "mb2e.tag", "pub", "mb2e.inline-tags", "true", "mb2e.default-note", "start",
-                "mb2e.force", "true", "mb2e.log.file", "/l"));
+                "mb2e.force", "true", "mb2e.commit-message", "docs: x", "mb2e.log.file", "/l"));
         assertThat(properties.vault().path()).isEqualTo("/v");
         assertThat(properties.template().path()).isEqualTo("/tpl");
         assertThat(properties.target().path()).isEqualTo("/t");
@@ -43,6 +44,7 @@ class Mb2ePropertiesTest {
         assertThat(properties.inlineTags()).isTrue();
         assertThat(properties.defaultNote()).isEqualTo("start");
         assertThat(properties.force()).isTrue();
+        assertThat(properties.commitMessage()).isEqualTo("docs: x");
         assertThat(properties.log().file()).isEqualTo("/l");
     }
 

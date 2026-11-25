@@ -1,5 +1,6 @@
 package io.github.mbero.mb2e.infrastructure.config;
 
+import io.github.mbero.mb2e.adapter.in.log.StepLog;
 import io.github.mbero.mb2e.adapter.out.external.GitProgram;
 import io.github.mbero.mb2e.adapter.out.persistence.FilePublishTarget;
 import io.github.mbero.mb2e.adapter.out.persistence.FileSiteSource;
@@ -69,12 +70,19 @@ public class BuildConfig {
     @Bean
     PublishUseCase publishUseCase(BuildUseCase build, VaultReader vault, SiteSource site, PublishTarget target,
             GitRepository git, ConfiguredPaths paths, Mb2eProperties properties) {
-        return new PublishService(build, vault, site, target, git, paths, properties.force());
+        return new PublishService(build, vault, site, target, git, paths, properties.force(),
+                properties.commitMessage());
     }
 
     @Bean
     PipelineUseCase pipelineUseCase(BuildUseCase build, PublishUseCase publish) {
         return new PipelineService(build, publish);
+    }
+
+    /** One structured line per step on standard error, and the optional log file. */
+    @Bean
+    StepLog stepLog(Mb2eProperties properties) {
+        return new StepLog(properties.log().file());
     }
 
     private static Path standIn(String configured, String key) {

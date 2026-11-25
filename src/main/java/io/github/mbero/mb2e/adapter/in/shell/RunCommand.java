@@ -1,5 +1,6 @@
 package io.github.mbero.mb2e.adapter.in.shell;
 
+import io.github.mbero.mb2e.adapter.in.log.StepLog;
 import io.github.mbero.mb2e.domain.model.RunReport;
 import io.github.mbero.mb2e.domain.model.StepResult;
 import io.github.mbero.mb2e.domain.port.in.PipelineUseCase;

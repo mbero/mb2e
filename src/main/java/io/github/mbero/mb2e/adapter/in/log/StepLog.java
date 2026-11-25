@@ -1,4 +1,4 @@
-package io.github.mbero.mb2e.adapter.in.shell;
+package io.github.mbero.mb2e.adapter.in.log;
 
 import io.github.mbero.mb2e.domain.model.BuildReport;
 import io.github.mbero.mb2e.domain.model.PublishReport;
@@ -79,11 +79,17 @@ public class StepLog {
     public void failure(String step, Throwable failure) {
         String traceId = UUID.randomUUID().toString();
         String line = "step=" + step + " outcome=failed traceId=" + traceId + " error="
-                + RefusalReporter.describe(failure);
+                + describe(failure);
         LOG.info(line);
         StringWriter trace = new StringWriter();
         failure.printStackTrace(new PrintWriter(trace));
         append(line + System.lineSeparator() + trace);
+    }
+
+    /** Returns the failure message, or its simple class name when the message is blank. */
+    private static String describe(Throwable failure) {
+        String message = failure.getMessage();
+        return message == null || message.isBlank() ? failure.getClass().getSimpleName() : message;
     }
 
     private void line(String step, String outcome, String traceId, String title, String detail, String counts) {

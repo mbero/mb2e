@@ -18,6 +18,15 @@ class Mb2eEnvironmentTest {
     }
 
     @Test
+    void theModeIsCliAndNoJsonKeyCanChangeIt() {
+        assertThat(Mb2eEnvironment.create(null).getProperty("mb2e.mode")).isEqualTo("cli");
+        assertThat(Mb2eEnvironment.create("{\"mb2e.mode\":\"server\"}").getProperty("mb2e.mode"))
+                .isEqualTo("cli");
+        assertThat(Mb2eEnvironment.create("{\"mb2e\":{\"mode\":\"server\"}}").getProperty("mb2e.mode"))
+                .isEqualTo("cli");
+    }
+
+    @Test
     void aKeyOutsideMb2eIsRefusedByName() {
         for (String key : new String[] {"spring.main.sources", "spring.shell.history.enabled", "logging.level.root"}) {
             assertThatThrownBy(() -> Mb2eEnvironment.create("{\"" + key + "\":\"x\"}"))
