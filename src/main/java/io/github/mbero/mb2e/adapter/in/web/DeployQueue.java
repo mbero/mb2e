@@ -22,7 +22,9 @@ public class DeployQueue implements DisposableBean {
     /** What happened to a trigger. */
     public enum Result {
         QUEUED,
-        COALESCED
+        COALESCED,
+        /** The service is stopping; the trigger is dropped and the next start-up run catches it up. */
+        STOPPED
     }
 
     /** The newest finished deployment and its finish time. */
@@ -48,11 +50,14 @@ public class DeployQueue implements DisposableBean {
 
     /** Starts a run now, waits in the one slot, or is covered by the run that already waits. */
     public Result submit(String reason) {
+        if (executor.isShutdown()) {
+            return Result.STOPPED;
+        }
         try {
             executor.execute(() -> run(reason));
             return Result.QUEUED;
         } catch (RejectedExecutionException rejected) {
-            return Result.COALESCED;
+            return executor.isShutdown() ? Result.STOPPED : Result.COALESCED;
         }
     }
 
@@ -71,10 +76,11 @@ public class DeployQueue implements DisposableBean {
         }
     }
 
-    /** Waits for the current run, then stops the worker. */
+    /** Drops the waiting run, waits for the current run, then stops the worker. */
     @Override
     public void destroy() throws InterruptedException {
         executor.shutdown();
+        executor.getQueue().clear();
         if (!executor.awaitTermination(shutdownWait.toMillis(), TimeUnit.MILLISECONDS)) {
             executor.shutdownNow();
         }

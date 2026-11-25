@@ -62,9 +62,17 @@ public class StepLog {
 
     /** Logs the outcome of one deployment with its attempts and the commits it used. */
     public void deploy(DeployReport report) {
-        line("deploy", report.outcome(), report.traceId(), report.title(), report.detail(),
-                "attempts=" + report.attempts() + " sourceCommit=" + commit(report.sourceCommit())
-                        + " targetCommit=" + commit(report.targetCommit()));
+        String detail = report.detail() == null ? "" : " detail=\"" + oneLine(report.detail()) + "\"";
+        LOG.info("step=deploy outcome=" + report.outcome() + " traceId=" + report.traceId() + " reason=\""
+                + oneLine(report.reason()) + "\" attempts=" + report.attempts() + " sourceCommit="
+                + commit(report.sourceCommit()) + " targetCommit=" + commit(report.targetCommit())
+                + (report.title() == null ? "" : " title=\"" + oneLine(report.title()) + "\"") + detail);
+        append("step=deploy outcome=" + report.outcome() + " traceId=" + report.traceId() + detail);
+    }
+
+    /** Keeps a text on one log line: line breaks become spaces and double quotes become single quotes. */
+    private static String oneLine(String text) {
+        return text == null ? "" : text.replaceAll("[\\r\\n]+", " ").replace('"', '\'').strip();
     }
 
     private static String commit(String id) {

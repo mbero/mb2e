@@ -79,13 +79,17 @@ public class GithubWebhookController {
         String reason = "push " + safe(payload.path("after").asText("")) + " delivery "
                 + safe(request.getHeader("X-GitHub-Delivery"));
         DeployQueue.Result result = queue.submit(reason);
+        if (result == DeployQueue.Result.STOPPED) {
+            return answer(HttpStatus.SERVICE_UNAVAILABLE, "refused", "stopping");
+        }
         return reply(HttpStatus.ACCEPTED, "{\"status\":\"" + result.name().toLowerCase(Locale.ROOT) + "\"}");
     }
 
     /** Reads at most the limit; returns null when the body is larger. */
     private byte[] readLimited(InputStream stream) throws IOException {
-        byte[] body = stream.readNBytes((int) Math.min(maxBodyBytes + 1, Integer.MAX_VALUE - 8));
-        return body.length > maxBodyBytes ? null : body;
+        long limit = Math.min(maxBodyBytes, Integer.MAX_VALUE - 9L);
+        byte[] body = stream.readNBytes((int) (limit + 1));
+        return body.length > limit ? null : body;
     }
 
     /** Keeps a header or payload value harmless in a log line. */

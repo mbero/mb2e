@@ -46,6 +46,17 @@ class GitRunnerTest {
     }
 
     @Test
+    void aGitProcessSeesNoVariableOfThisApplicationButKeepsTheRest() {
+        Map<String, String> child = GitRunner.childEnvironment(Map.of("PATH", "/bin", "MB2E_TARGET_TOKEN", "t",
+                "MB2E_WEBHOOK_SECRET", "s", "mb2e_lower", "x", "SPRING_APPLICATION_JSON", "{}", "HOME", "/h"),
+                Map.of("GIT_CONFIG_COUNT", "1"));
+        assertThat(child).containsEntry("PATH", "/bin").containsEntry("HOME", "/h")
+                .containsEntry("GIT_CONFIG_COUNT", "1").containsEntry("GIT_TERMINAL_PROMPT", "0")
+                .doesNotContainKeys("MB2E_TARGET_TOKEN", "MB2E_WEBHOOK_SECRET", "mb2e_lower",
+                        "SPRING_APPLICATION_JSON");
+    }
+
+    @Test
     void eachInvocationSetsTheNoPromptAndNoLockVariables() {
         GitRunner.Result result = runner.run(dir, Duration.ofSeconds(5),
                 Map.of("GIT_TERMINAL_PROMPT", "1", "GIT_OPTIONAL_LOCKS", "1"), List.of(),

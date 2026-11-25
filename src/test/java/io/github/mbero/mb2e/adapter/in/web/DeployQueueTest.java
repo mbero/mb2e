@@ -66,6 +66,7 @@ class DeployQueueTest {
         assertThat(results.stream().filter(r -> r == DeployQueue.Result.QUEUED).count()).isEqualTo(2);
         assertThat(results.stream().filter(r -> r == DeployQueue.Result.COALESCED).count()).isEqualTo(8);
         release.countDown();
+        awaitRuns(2);
         queue.destroy();
         assertThat(reasons).hasSize(2);
         assertThat(overlaps.get()).isZero();
@@ -108,11 +109,31 @@ class DeployQueueTest {
     }
 
     @Test
-    void afterDestroyATriggerIsCoalescedNotRun() throws Exception {
+    void afterDestroyATriggerIsStoppedNotRun() throws Exception {
         blockFirst = false;
         DeployQueue queue = queue();
         queue.destroy();
-        assertThat(queue.submit("late")).isEqualTo(DeployQueue.Result.COALESCED);
+        assertThat(queue.submit("late")).isEqualTo(DeployQueue.Result.STOPPED);
+        Thread.sleep(200);
+        assertThat(reasons).isEmpty();
+    }
+
+    @Test
+    void destroyDropsTheWaitingRunAndWaitsForTheCurrentOne() throws Exception {
+        DeployQueue queue = queue();
+        queue.submit("current");
+        assertThat(started.await(5, TimeUnit.SECONDS)).isTrue();
+        assertThat(queue.submit("waiting")).isEqualTo(DeployQueue.Result.QUEUED);
+        new Thread(() -> {
+            try {
+                Thread.sleep(300);
+            } catch (InterruptedException interrupted) {
+                Thread.currentThread().interrupt();
+            }
+            release.countDown();
+        }).start();
+        queue.destroy();
+        assertThat(reasons).containsExactly("current");
     }
 
     private void awaitRuns(int count) throws InterruptedException {

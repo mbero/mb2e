@@ -111,9 +111,18 @@ class StepLogTest {
         new StepLog("").deploy(new DeployReport("t-9", "deployed", null, null, "push", "abc123", "def456", 2, null));
         new StepLog("").deploy(new DeployReport("t-10", "failed", "Git failed", "boom", "poll", null, null, 1, null));
         assertThat(events.list).extracting(ILoggingEvent::getFormattedMessage).satisfiesExactly(
-                a -> assertThat(a).contains("step=deploy outcome=deployed traceId=t-9 attempts=2",
-                        "sourceCommit=abc123", "targetCommit=def456"),
+                a -> assertThat(a).contains("step=deploy outcome=deployed traceId=t-9 reason=\"push\" attempts=2",
+                        "sourceCommit=abc123", "targetCommit=def456").doesNotContain("detail="),
                 b -> assertThat(b).contains("step=deploy outcome=failed", "sourceCommit=-", "targetCommit=-",
-                        "title=\"Git failed\""));
+                        "title=\"Git failed\"", "detail=\"boom\""));
+    }
+
+    @Test
+    void aMultiLineDetailStaysOnOneConsoleLine() {
+        new StepLog("").deploy(new DeployReport("t-11", "failed", "Git failed",
+                "remote: \"Invalid\" password\nfatal: denied", "push abc", null, null, 1, null));
+        assertThat(events.list).extracting(ILoggingEvent::getFormattedMessage).singleElement()
+                .satisfies(line -> assertThat(line).doesNotContain("\n")
+                        .contains("detail=\"remote: 'Invalid' password fatal: denied\""));
     }
 }

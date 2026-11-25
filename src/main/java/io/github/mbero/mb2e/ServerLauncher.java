@@ -37,8 +37,8 @@ final class ServerLauncher {
         }
         Mb2eEnvironment server;
         try {
-            server = Mb2eEnvironment.forServer(environment.get(Mb2eEnvironment.JSON_VARIABLE),
-                    ServerEnvironment.properties(environment, fileReader));
+            // The server reads only the MB2E_* variables; SPRING_APPLICATION_JSON is ignored, not checked.
+            server = Mb2eEnvironment.forServer(null, ServerEnvironment.properties(environment, fileReader));
         } catch (Mb2eEnvironment.Refused refused) {
             return refuse(refused.getMessage());
         }

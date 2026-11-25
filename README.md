@@ -418,7 +418,8 @@ Tokens: set `MB2E_GITHUB_TOKEN`, or both `MB2E_SOURCE_TOKEN` and `MB2E_TARGET_TO
 
 - The service speaks plain HTTP. Put a reverse proxy with TLS in front of it; the compose file binds the port to `127.0.0.1` only. TLS and rate limits are not part of mb2e.
 - Run exactly one container for one volume. A file lock (`.mb2e.lock`) refuses a second service on the same workspace.
-- `GET /healthz` answers `200` with the last outcome (`deployed`, `up_to_date`, `refused` or `failed`). A failed or refused run does not make the service `down`: a restart does not fix a wrong note or an expired token. Read the `step=deploy` lines in the log.
+- `GET /healthz` answers `200` with the last outcome (`deployed`, `up_to_date`, `refused` or `failed`). A failed or refused run does not make the service `down`: a restart does not fix a wrong note or an expired token. Read the `step=deploy` lines in the log: each one names the trigger and, for a failure, the cause.
+- A push that arrives while the service stops gets `503`; the start-up run of the next start catches it up.
 - A burst of pushes gives at most two runs. A rejected push is retried from a fresh sync, three times at most, and is never forced.
 - Git LFS is not supported. If the notes repository stores images with Git LFS, the clone holds pointer files and the published images do not load.
 - Failure notifications are not built in. Watch the log and `/healthz`.

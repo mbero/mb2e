@@ -42,7 +42,7 @@ class ServerEnvironmentTest {
                 .containsEntry("mb2e.server.sync-on-start", true)
                 .containsEntry("mb2e.server.poll-interval-seconds", 0L)
                 .containsEntry("mb2e.tag", "blog-ready")
-                .containsEntry("mb2e.commit-message", "chore(content): refresh Knowledge Hub");
+                .doesNotContainKey("mb2e.commit-message");
     }
 
     @Test
@@ -163,6 +163,9 @@ class ServerEnvironmentTest {
             env.put(entry.getKey(), entry.getValue());
             assertThatThrownBy(() -> properties(env)).hasMessageContaining(entry.getKey());
         }
+        Map<String, String> huge = complete();
+        huge.put("MB2E_WEBHOOK_MAX_BODY_BYTES", String.valueOf(Long.MAX_VALUE));
+        assertThatThrownBy(() -> properties(huge)).hasMessageContaining("MB2E_WEBHOOK_MAX_BODY_BYTES");
         Map<String, String> good = complete();
         good.put("MB2E_HTTP_PORT", "9999");
         good.put("MB2E_POLL_INTERVAL_SECONDS", "60");

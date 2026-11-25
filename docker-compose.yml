@@ -6,7 +6,8 @@ services:
     env_file: .env
     ports:
       # Plain HTTP on the loopback only; a reverse proxy on the host terminates TLS.
-      - "127.0.0.1:8080:8080"
+      # The container side follows MB2E_HTTP_PORT from .env; the host side stays 8080.
+      - "127.0.0.1:8080:${MB2E_HTTP_PORT:-8080}"
     volumes:
       - mb2e-workspace:/var/lib/mb2e
     restart: unless-stopped

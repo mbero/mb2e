@@ -312,8 +312,13 @@ public class PublishService implements PublishUseCase {
     private List<String> commands(String branch) {
         String directory = shellWord(target.location());
         return List.of("git -C " + directory + " add -A",
-                "git -C " + directory + " commit -m \"" + commitMessage + "\"",
+                "git -C " + directory + " commit -m \"" + insideDoubleQuotes(commitMessage) + "\"",
                 "git -C " + directory + " push origin " + branch);
+    }
+
+    /** Escapes the four characters that a shell still reads inside double quotes, so the text stays literal. */
+    private static String insideDoubleQuotes(String text) {
+        return text.replace("\\", "\\\\").replace("\"", "\\\"").replace("$", "\\$").replace("`", "\\`");
     }
 
     /** The path as typed, quoted only when a shell would split or expand it. */

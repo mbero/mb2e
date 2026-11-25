@@ -111,6 +111,23 @@ class GithubWebhookControllerTest {
     }
 
     @Test
+    void aPushWhileTheServiceStopsGets503() throws Exception {
+        when(queue.submit("push abc123 delivery d-1")).thenReturn(DeployQueue.Result.STOPPED);
+        signed("push", PUSH).andExpect(status().isServiceUnavailable())
+                .andExpect(content().json("{\"status\":\"refused\",\"reason\":\"stopping\"}"));
+    }
+
+    @Test
+    void theLargestAcceptedBodyLimitStillReadsTheBody() throws Exception {
+        MockMvc largest = MockMvcBuilders.standaloneSetup(new GithubWebhookController(queue,
+                new WebhookSettings(SECRET, Long.MAX_VALUE, "me/notes", "main"))).build();
+        when(queue.submit("push abc123 delivery d-1")).thenReturn(DeployQueue.Result.QUEUED);
+        largest.perform(post("/webhook/github").contentType(MediaType.APPLICATION_JSON).content(PUSH)
+                .header("X-GitHub-Event", "push").header("X-GitHub-Delivery", "d-1")
+                .header("X-Hub-Signature-256", sign(SECRET, PUSH))).andExpect(status().isAccepted());
+    }
+
+    @Test
     void aValidPushIsAnsweredFastWhileTheUseCaseBlocks() throws Exception {
         java.util.concurrent.CountDownLatch release = new java.util.concurrent.CountDownLatch(1);
         DeployQueue real = new DeployQueue(reason -> {

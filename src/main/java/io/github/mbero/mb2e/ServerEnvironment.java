@@ -17,6 +17,8 @@ final class ServerEnvironment {
 
     private static final Pattern REPOSITORY =
             Pattern.compile("^https://github\\.com/([A-Za-z0-9_.-]+)/([A-Za-z0-9_.-]+?)(\\.git)?$");
+    /** The largest body the controller can hold in one array. */
+    static final long MAX_BODY_BYTES = Integer.MAX_VALUE - 8L;
     private static final Pattern BRANCH = Pattern.compile("^[A-Za-z0-9_][A-Za-z0-9._/-]*$");
     private static final int MIN_SECRET_LENGTH = 32;
 
@@ -70,7 +72,7 @@ final class ServerEnvironment {
         out.put("mb2e.server.target.branch", branch("MB2E_TARGET_BRANCH"));
         out.put("mb2e.server.target.token", targetToken);
         out.put("mb2e.server.webhook.secret", webhook);
-        out.put("mb2e.server.webhook.max-body-bytes", number("MB2E_WEBHOOK_MAX_BODY_BYTES", 26214400L, 1, Long.MAX_VALUE));
+        out.put("mb2e.server.webhook.max-body-bytes", number("MB2E_WEBHOOK_MAX_BODY_BYTES", 26214400L, 1, MAX_BODY_BYTES));
         out.put("mb2e.server.git.user-name", required("MB2E_GIT_USER_NAME"));
         out.put("mb2e.server.git.user-email", required("MB2E_GIT_USER_EMAIL"));
         out.put("mb2e.server.git.network-timeout-seconds", number("MB2E_GIT_NETWORK_TIMEOUT_SECONDS", 120, 10, 900));
@@ -83,7 +85,7 @@ final class ServerEnvironment {
         out.put("mb2e.inline-tags", bool("MB2E_INLINE_TAGS", false));
         out.put("mb2e.default-note", optional("MB2E_DEFAULT_NOTE", "about"));
         out.put("mb2e.force", bool("MB2E_FORCE", false));
-        out.put("mb2e.commit-message", commitMessage());
+        commitMessage().ifPresent(message -> out.put("mb2e.commit-message", message));
         out.put("mb2e.log.file", optional("MB2E_LOG_FILE", ""));
         out.put("mb2e.vault.path", subdir.isEmpty() ? Path.of(workspace, "source").toString()
                 : Path.of(workspace, "source", subdir).toString());
@@ -228,11 +230,12 @@ final class ServerEnvironment {
         return seconds;
     }
 
-    private String commitMessage() {
-        String value = optional("MB2E_COMMIT_MESSAGE", "chore(content): refresh Knowledge Hub");
-        if (value.contains("\n") || value.contains("\r")) {
+    /** Returns the commit message when it is set; the default lives in {@code Mb2eProperties} only. */
+    private java.util.Optional<String> commitMessage() {
+        String value = raw("MB2E_COMMIT_MESSAGE");
+        if (value != null && (value.contains("\n") || value.contains("\r"))) {
             throw refused("MB2E_COMMIT_MESSAGE must be one line.");
         }
-        return value;
+        return java.util.Optional.ofNullable(value);
     }
 }

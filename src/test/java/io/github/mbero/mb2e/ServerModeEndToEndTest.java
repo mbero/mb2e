@@ -183,6 +183,21 @@ class ServerModeEndToEndTest {
     }
 
     @Test
+    @Order(0)
+    void theRealServerAnswersErrorsWithoutAStackTrace() throws Exception {
+        URI webhook = URI.create("http://127.0.0.1:" + port + "/webhook/github");
+        List<HttpResponse<String>> answers = List.of(
+                HTTP.send(HttpRequest.newBuilder(webhook).build(), HttpResponse.BodyHandlers.ofString()),
+                HTTP.send(HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + "/nothing")).build(),
+                        HttpResponse.BodyHandlers.ofString()),
+                HTTP.send(HttpRequest.newBuilder(webhook).header("X-GitHub-Event", "push")
+                        .POST(HttpRequest.BodyPublishers.ofString("{")).build(), HttpResponse.BodyHandlers.ofString()));
+        assertThat(answers).extracting(HttpResponse::statusCode).containsExactly(405, 404, 401);
+        assertThat(answers).allSatisfy(answer -> assertThat(answer.body()).doesNotContain("Exception", "at org.",
+                "at io.", "trace"));
+    }
+
+    @Test
     @Order(1)
     void aSignedPushBuildsTheSiteAndCommitsItToTheTargetWithoutTouchingOtherFiles() throws Exception {
         String source = git(sourceWork, "rev-parse", "HEAD");

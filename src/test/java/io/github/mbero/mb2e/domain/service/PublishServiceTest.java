@@ -241,6 +241,17 @@ class PublishServiceTest {
     }
 
     @Test
+    void thePrintedCommitCommandKeepsShellCharactersOfTheMessageLiteral() {
+        aPublishableTemplate();
+        when(target.location()).thenReturn("/t");
+        when(target.inspect()).thenReturn(PublishTarget.Kind.USABLE);
+        PublishService service = new PublishService(build, vault, site, target, git, PATHS, false,
+                "say \"hi\" $(id) `id` \\n");
+        PublishReport report = service.publish(built(), true);
+        assertThat(report.commands()).contains("git -C /t commit -m \"say \\\"hi\\\" \\$(id) \\`id\\` \\\\n\"");
+    }
+
+    @Test
     void aTargetThatAlreadyHoldsTheSiteIsUpToDate() {
         aPublishableTemplate();
         when(target.files("assets")).thenReturn(List.of("assets/js/app.js", "assets/js/data.js"));
