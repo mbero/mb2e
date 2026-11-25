@@ -2,9 +2,6 @@ package io.github.mbero.mb2e.adapter.in.shell;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 import io.github.mbero.mb2e.adapter.in.log.StepLog;
 import io.github.mbero.mb2e.domain.model.BuildReport;
@@ -18,25 +15,47 @@ import io.github.mbero.mb2e.domain.port.in.PublishUseCase;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.util.List;
+import java.util.function.Function;
 import org.junit.jupiter.api.Test;
 import org.springframework.shell.command.CommandContext;
-import org.springframework.shell.command.CommandParser.CommandParserResults;
-import org.springframework.shell.command.CommandRegistration;
 
-/** Covers the three working commands and the report JSON with mocked use cases. */
+/** Covers the three working commands and the report JSON with hand-written use cases. */
 class ReportCommandsTest {
 
     private final StepLog log = new StepLog("");
 
     private static CommandContext context(String command, String... words) {
-        CommandParserResults results = mock(CommandParserResults.class);
-        when(results.positional()).thenReturn(List.of(words));
-        CommandRegistration registration = mock(CommandRegistration.class);
-        when(registration.getCommand()).thenReturn(command);
-        CommandContext context = mock(CommandContext.class);
-        when(context.getParserResults()).thenReturn(results);
-        when(context.getCommandRegistration()).thenReturn(registration);
-        return context;
+        return ShellContexts.of(command, words);
+    }
+
+    /** A build use case whose report depends only on the dry-run flag. */
+    private static BuildUseCase building(Function<Boolean, BuildReport> reports) {
+        return new BuildUseCase() {
+            @Override
+            public BuildReport build(boolean dryRun) {
+                return reports.apply(dryRun);
+            }
+
+            @Override
+            public io.github.mbero.mb2e.domain.model.Assembly assemble(boolean dryRun) {
+                throw new UnsupportedOperationException("the command never assembles");
+            }
+        };
+    }
+
+    /** A publish use case whose report depends only on the dry-run flag. */
+    private static PublishUseCase publishing(Function<Boolean, PublishReport> reports) {
+        return new PublishUseCase() {
+            @Override
+            public PublishReport publish(boolean dryRun) {
+                return reports.apply(dryRun);
+            }
+
+            @Override
+            public PublishReport publish(io.github.mbero.mb2e.domain.model.Assembly built, boolean dryRun) {
+                throw new UnsupportedOperationException("the command publishes from the vault");
+            }
+        };
     }
 
     private static BuildReport built(boolean dryRun) {
@@ -70,8 +89,7 @@ class ReportCommandsTest {
 
     @Test
     void buildPrintsTheHumanReportWithItsDryRunMarkAndTraceId() {
-        BuildUseCase use = mock(BuildUseCase.class);
-        when(use.build(true)).thenReturn(built(true));
+        BuildUseCase use = building(dryRun -> built(true));
         String text = new BuildCommand(use, log).build(context("build"), false, true);
         assertThat(text).contains("[dry run] nothing is written anywhere", "Notes:               4",
                 "unresolved link: [[ghost]]", "missing file: missing.png", "Warning: careful",
@@ -80,8 +98,7 @@ class ReportCommandsTest {
 
     @Test
     void buildPrintsOneJsonObjectWithJson() {
-        BuildUseCase use = mock(BuildUseCase.class);
-        when(use.build(false)).thenReturn(built(false));
+        BuildUseCase use = building(dryRun -> built(false));
         String json = new BuildCommand(use, log).build(context("build"), true, false);
         assertThat(json).startsWith("{\"outcome\":\"ok\",\"traceId\":\"t-b\"").contains("\"noteCount\":4",
                 "\"missingLinks\":[\"[[ghost]]\"]", "\"dryRun\":false").endsWith("}");
@@ -89,8 +106,7 @@ class ReportCommandsTest {
 
     @Test
     void aRefusedBuildPrintsItsReportAndThrowsARefusal() {
-        BuildUseCase use = mock(BuildUseCase.class);
-        when(use.build(anyBoolean())).thenReturn(refusedBuild());
+        BuildUseCase use = building(dryRun -> refusedBuild());
         BuildCommand command = new BuildCommand(use, log);
         String out = printed(() -> assertThatThrownBy(() -> command.build(context("build"), false, false))
                 .isInstanceOf(ShellRefusal.class).hasMessage("No vault: Set mb2e.vault.path"));
@@ -102,8 +118,7 @@ class ReportCommandsTest {
 
     @Test
     void publishPrintsTheChangesTheCountsAndTheCommands() {
-        PublishUseCase use = mock(PublishUseCase.class);
-        when(use.publish(true)).thenReturn(published(true, "Note"));
+        PublishUseCase use = publishing(dryRun -> published(true, "Note"));
         String text = new PublishCommand(use, log).publish(context("publish"), false, true);
         assertThat(text).contains("Warning: warn", "[dry run] ~ index.html", "[dry run] - old.html",
                 "[dry run] + assets/img/notes/n/a.png", "[dry run] - assets/img/notes/gone.png",
@@ -113,32 +128,31 @@ class ReportCommandsTest {
 
     @Test
     void publishWithoutDryRunOrMessageOrCommandsOmitsThem() {
-        PublishUseCase use = mock(PublishUseCase.class);
         PublishReport quiet = new PublishReport("t-q", "ok", null, null, false, "/t", "main", null, List.of(),
                 List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
-        when(use.publish(false)).thenReturn(quiet);
+        PublishUseCase use = publishing(dryRun -> quiet);
         String text = new PublishCommand(use, log).publish(context("publish"), false, false);
         assertThat(text).doesNotContain("[dry run]", "To publish").contains("Changed files:       0");
     }
 
     @Test
     void publishPrintsJsonAndRefusesLikeBuild() {
-        PublishUseCase use = mock(PublishUseCase.class);
-        when(use.publish(false)).thenReturn(published(false, null));
+        PublishUseCase use = publishing(dryRun -> dryRun
+                ? PublishReport.refused("t-x", "Not usable", "Bad target", true, "/t")
+                : published(false, null));
         assertThat(new PublishCommand(use, log).publish(context("publish"), true, false))
                 .contains("\"targetPath\":\"/t\"", "\"message\":null", "\"missingMediaCount\":1");
-        when(use.publish(true)).thenReturn(PublishReport.refused("t-x", "Not usable", "Bad target", true, "/t"));
         printed(() -> assertThatThrownBy(() -> new PublishCommand(use, log).publish(context("publish"), false, true))
                 .isInstanceOf(ShellRefusal.class).hasMessage("Not usable: Bad target"));
     }
 
     @Test
     void runPrintsASectionPerStepAndASkippedStepHasNoBody() {
-        PipelineUseCase use = mock(PipelineUseCase.class);
-        when(use.run(false, false)).thenReturn(new RunReport("t-run", "ok", null, null, false,
-                StepResult.of("ok", built(false)), StepResult.of("ok", published(false, null))));
-        when(use.run(false, true)).thenReturn(new RunReport("t-run2", "ok", null, null, false,
-                StepResult.of("ok", built(false)), StepResult.skipped()));
+        PipelineUseCase use = (dryRun, noPublish) -> noPublish
+                ? new RunReport("t-run2", "ok", null, null, false, StepResult.of("ok", built(false)),
+                        StepResult.skipped())
+                : new RunReport("t-run", "ok", null, null, false, StepResult.of("ok", built(false)),
+                        StepResult.of("ok", published(false, null)));
         RunCommand command = new RunCommand(use, log);
         assertThat(command.run(context("run"), false, false, false)).contains("== build: ok ==",
                 "== publish: ok ==", "Branch:              main").endsWith("Trace id: t-run");
@@ -148,14 +162,14 @@ class ReportCommandsTest {
 
     @Test
     void runPrintsJsonWithASectionPerStepAndRefusesWhenAStepIsRefused() {
-        PipelineUseCase use = mock(PipelineUseCase.class);
-        when(use.run(false, true)).thenReturn(new RunReport("t-j", "ok", null, null, false,
-                StepResult.of("ok", built(false)), StepResult.skipped()));
+        PipelineUseCase use = (dryRun, noPublish) -> dryRun
+                ? new RunReport("t-f", "refused", "No vault", "Set it", true, StepResult.of("refused", refusedBuild()),
+                        StepResult.notRun())
+                : new RunReport("t-j", "ok", null, null, false, StepResult.of("ok", built(false)),
+                        StepResult.skipped());
         RunCommand command = new RunCommand(use, log);
         assertThat(command.run(context("run"), true, false, true)).contains("\"build\":{\"outcome\":\"ok\"",
                 "\"publish\":{\"outcome\":\"skipped\"}").doesNotContain("\"traceId\":\"t-b\"");
-        when(use.run(true, false)).thenReturn(new RunReport("t-f", "refused", "No vault", "Set it", true,
-                StepResult.of("refused", refusedBuild()), StepResult.notRun()));
         String out = printed(() -> assertThatThrownBy(() -> command.run(context("run"), false, true, false))
                 .isInstanceOf(ShellRefusal.class).hasMessage("No vault: Set it"));
         assertThat(out).contains("Refused: No vault", "Trace id: t-f");
@@ -163,7 +177,9 @@ class ReportCommandsTest {
 
     @Test
     void aStrayWordIsRefusedBeforeAnyUseCaseRuns() {
-        BuildUseCase use = mock(BuildUseCase.class);
+        BuildUseCase use = building(dryRun -> {
+            throw new AssertionError("the use case must not run");
+        });
         assertThatThrownBy(() -> new BuildCommand(use, log).build(context("build", "extra"), false, false))
                 .isInstanceOf(ShellRefusal.class).hasMessageContaining("extra");
     }

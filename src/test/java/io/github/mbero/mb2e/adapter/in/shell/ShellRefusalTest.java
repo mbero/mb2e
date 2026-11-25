@@ -3,38 +3,23 @@ package io.github.mbero.mb2e.adapter.in.shell;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.shell.ExitRequest;
 import org.springframework.shell.command.CommandContext;
 import org.springframework.shell.command.CommandParser.CommandParserException;
-import org.springframework.shell.command.CommandParser.CommandParserResults;
 import org.springframework.shell.command.CommandExecution.CommandParserExceptionsException;
-import org.springframework.shell.command.CommandRegistration;
 import org.springframework.shell.context.InteractionMode;
-import org.springframework.shell.context.ShellContext;
 
 class ShellRefusalTest {
 
     private static CommandContext contextWith(String command, String... words) {
-        return contextWith(InteractionMode.INTERACTIVE, command, words);
+        return ShellContexts.of(command, words);
     }
 
     private static CommandContext contextWith(InteractionMode mode, String command, String... words) {
-        ShellContext shell = mock(ShellContext.class);
-        when(shell.getInteractionMode()).thenReturn(mode);
-        CommandParserResults results = mock(CommandParserResults.class);
-        when(results.positional()).thenReturn(List.of(words));
-        CommandRegistration registration = mock(CommandRegistration.class);
-        when(registration.getCommand()).thenReturn(command);
-        CommandContext context = mock(CommandContext.class);
-        when(context.getParserResults()).thenReturn(results);
-        when(context.getCommandRegistration()).thenReturn(registration);
-        when(context.getShellContext()).thenReturn(shell);
-        return context;
+        return ShellContexts.of(mode, command, words);
     }
 
     @Test
