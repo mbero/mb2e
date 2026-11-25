@@ -42,6 +42,7 @@ class ServerEnvironmentTest {
                 .containsEntry("mb2e.server.sync-on-start", true)
                 .containsEntry("mb2e.server.poll-interval-seconds", 0L)
                 .containsEntry("mb2e.tag", "blog-ready")
+                .containsEntry("mb2e.server.source.repository", "me/notes")
                 .doesNotContainKey("mb2e.commit-message");
     }
 

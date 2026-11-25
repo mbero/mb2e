@@ -1,10 +1,6 @@
 package io.github.mbero.mb2e.adapter.in.web;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -13,7 +9,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HexFormat;
+import java.util.List;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import org.junit.jupiter.api.Test;
@@ -30,9 +28,27 @@ class GithubWebhookControllerTest {
     private static final String PUSH = "{\"ref\":\"refs/heads/main\",\"after\":\"abc123\","
             + "\"deleted\":false,\"repository\":{\"full_name\":\"Me/Notes\"}}";
 
-    private final DeployQueue queue = mock(DeployQueue.class);
-    private final MockMvc mvc = MockMvcBuilders.standaloneSetup(
-            new GithubWebhookController(queue, new WebhookSettings(SECRET, 1024, "me/notes", "main"))).build();
+    /** Records each trigger and answers with the result that the test sets. */
+    private static final class RecordingTrigger implements DeployTrigger {
+        private final List<String> reasons = new ArrayList<>();
+        private DeployQueue.Result next = DeployQueue.Result.QUEUED;
+
+        @Override
+        public DeployQueue.Result submit(String reason) {
+            reasons.add(reason);
+            return next;
+        }
+    }
+
+    private final RecordingTrigger queue = new RecordingTrigger();
+    private final MockMvc mvc = server(queue, 1024);
+
+    private static MockMvc server(DeployTrigger trigger, long maxBodyBytes) {
+        GithubWebhookController webhook = new GithubWebhookController(trigger,
+                new WebhookSettings(SECRET, maxBodyBytes, "me/notes", "main"));
+        HealthController health = new HealthController(java.util.Optional::empty);
+        return MockMvcBuilders.routerFunctions(WebRoutes.of(webhook, health)).build();
+    }
 
     private static String sign(String secret, String body) throws Exception {
         Mac mac = Mac.getInstance("HmacSHA256");
@@ -58,7 +74,7 @@ class GithubWebhookControllerTest {
         String big = "x".repeat(2000);
         send("push", big, sign(SECRET, big)).andExpect(status().isPayloadTooLarge())
                 .andExpect(content().json("{\"status\":\"refused\",\"reason\":\"body too large\"}"));
-        verifyNoInteractions(queue);
+        assertThat(queue.reasons).isEmpty();
     }
 
     @Test
@@ -67,7 +83,7 @@ class GithubWebhookControllerTest {
                 .andExpect(content().json("{\"status\":\"refused\",\"reason\":\"signature\"}"));
         send("push", PUSH, sign("another secret of enough length 123456", PUSH)).andExpect(status().isUnauthorized());
         send("push", PUSH, "sha256=zz").andExpect(status().isUnauthorized());
-        verifyNoInteractions(queue);
+        assertThat(queue.reasons).isEmpty();
     }
 
     @Test
@@ -86,7 +102,7 @@ class GithubWebhookControllerTest {
         signed("push", "[1,2]").andExpect(status().isBadRequest())
                 .andExpect(content().json("{\"status\":\"refused\",\"reason\":\"payload\"}"));
         signed("push", "not json").andExpect(status().isBadRequest());
-        verifyNoInteractions(queue);
+        assertThat(queue.reasons).isEmpty();
     }
 
     @Test
@@ -97,31 +113,28 @@ class GithubWebhookControllerTest {
                 .andExpect(content().json("{\"status\":\"ignored\",\"reason\":\"ref\"}"));
         signed("push", PUSH.replace("\"deleted\":false", "\"deleted\":true")).andExpect(status().isOk())
                 .andExpect(content().json("{\"status\":\"ignored\",\"reason\":\"deleted\"}"));
-        verifyNoInteractions(queue);
+        assertThat(queue.reasons).isEmpty();
     }
 
     @Test
     void aValidPushIsAcceptedAndQueuedWithAHarmlessReason() throws Exception {
-        when(queue.submit("push abc123 delivery d-1")).thenReturn(DeployQueue.Result.QUEUED);
         signed("push", PUSH).andExpect(status().isAccepted()).andExpect(content().json("{\"status\":\"queued\"}"));
-        verify(queue).submit("push abc123 delivery d-1");
-        when(queue.submit("push ??x? delivery d-1")).thenReturn(DeployQueue.Result.COALESCED);
+        queue.next = DeployQueue.Result.COALESCED;
         signed("push", PUSH.replace("abc123", "\\n/x\\n")).andExpect(status().isAccepted())
                 .andExpect(content().json("{\"status\":\"coalesced\"}"));
+        assertThat(queue.reasons).containsExactly("push abc123 delivery d-1", "push ??x? delivery d-1");
     }
 
     @Test
     void aPushWhileTheServiceStopsGets503() throws Exception {
-        when(queue.submit("push abc123 delivery d-1")).thenReturn(DeployQueue.Result.STOPPED);
+        queue.next = DeployQueue.Result.STOPPED;
         signed("push", PUSH).andExpect(status().isServiceUnavailable())
                 .andExpect(content().json("{\"status\":\"refused\",\"reason\":\"stopping\"}"));
     }
 
     @Test
     void theLargestAcceptedBodyLimitStillReadsTheBody() throws Exception {
-        MockMvc largest = MockMvcBuilders.standaloneSetup(new GithubWebhookController(queue,
-                new WebhookSettings(SECRET, Long.MAX_VALUE, "me/notes", "main"))).build();
-        when(queue.submit("push abc123 delivery d-1")).thenReturn(DeployQueue.Result.QUEUED);
+        MockMvc largest = server(queue, Long.MAX_VALUE);
         largest.perform(post("/webhook/github").contentType(MediaType.APPLICATION_JSON).content(PUSH)
                 .header("X-GitHub-Event", "push").header("X-GitHub-Delivery", "d-1")
                 .header("X-Hub-Signature-256", sign(SECRET, PUSH))).andExpect(status().isAccepted());
@@ -139,8 +152,7 @@ class GithubWebhookControllerTest {
             return new io.github.mbero.mb2e.domain.model.DeployReport("t", "up_to_date", null, null, reason, null,
                     null, 1, null);
         }, new io.github.mbero.mb2e.adapter.in.log.StepLog(""), java.time.Duration.ofSeconds(5));
-        MockMvc blocked = MockMvcBuilders.standaloneSetup(
-                new GithubWebhookController(real, new WebhookSettings(SECRET, 1024, "me/notes", "main"))).build();
+        MockMvc blocked = server(real, 1024);
         long begin = System.nanoTime();
         blocked.perform(post("/webhook/github").content(PUSH).header("X-GitHub-Event", "push")
                 .header("X-Hub-Signature-256", sign(SECRET, PUSH))).andExpect(status().isAccepted());
@@ -151,7 +163,7 @@ class GithubWebhookControllerTest {
 
     @Test
     void otherMethodsAndPathsGetPlainErrorsWithoutAStackTrace() throws Exception {
-        mvc.perform(get("/webhook/github")).andExpect(status().isMethodNotAllowed());
+        mvc.perform(get("/webhook/github")).andExpect(status().isNotFound());
         mvc.perform(post("/other")).andExpect(status().isNotFound());
         assertThat(mvc.perform(get("/webhook/github")).andReturn().getResponse().getContentAsString())
                 .doesNotContain("Exception", "at io.github");

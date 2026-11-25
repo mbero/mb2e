@@ -2,7 +2,6 @@ package io.github.mbero.mb2e;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import io.github.mbero.mb2e.adapter.in.web.WebhookSettings;
 import java.net.ServerSocket;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -31,8 +30,6 @@ import org.junit.jupiter.api.io.TempDir;
 import org.springframework.boot.Banner;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 
 /**
  * A signed webhook to a commit in a bare target repository: the real server context, real git, and two bare
@@ -45,15 +42,6 @@ class ServerModeEndToEndTest {
     private static final String SUBJECT = "chore(content): refresh Knowledge Hub";
     private static final Pattern FINISHED = Pattern.compile("\"finishedAt\":\"([^\"]+)\"");
     private static final Pattern OUTCOME = Pattern.compile("\"outcome\":\"([a-z_]+)\"");
-
-    /** Replaces the webhook settings: the configured URL is a file URL, so the repository name is set here. */
-    @Configuration(proxyBeanMethods = false)
-    static class Overrides {
-        @Bean
-        WebhookSettings webhookSettings() {
-            return new WebhookSettings(SECRET, 1024 * 1024, "me/notes", "main");
-        }
-    }
 
     @TempDir
     static Path temp;
@@ -118,7 +106,8 @@ class ServerModeEndToEndTest {
         env.put("MB2E_TEMPLATE_PATH", Path.of("src/main/resources/template/mbs-blog").toAbsolutePath().toString());
         env.put("MB2E_SYNC_ON_START", "false");
         Map<String, Object> properties = new HashMap<>(ServerEnvironment.properties(env, path -> null));
-        // ServerEnvironment refuses a file URL, so the test sets the two URLs after the validation.
+        // ServerEnvironment refuses a file URL, so the test sets the two URLs after the validation; the
+        // repository name that webhooks carry still comes from the https URL above.
         properties.put("mb2e.server.source.url", sourceBare.toUri().toString());
         properties.put("mb2e.server.target.url", targetBare.toUri().toString());
         // The target is not a Pages repository by name, so the remote check is relaxed to a warning.
@@ -127,8 +116,7 @@ class ServerModeEndToEndTest {
             port = free.getLocalPort();
         }
         properties.put("server.port", port);
-        properties.put("spring.main.allow-bean-definition-overriding", true);
-        context = new SpringApplicationBuilder(Mb2eApplication.class, Overrides.class)
+        context = new SpringApplicationBuilder(Mb2eApplication.class)
                 .environment(Mb2eEnvironment.forServer(null, properties)).bannerMode(Banner.Mode.OFF).run();
     }
 
@@ -192,7 +180,7 @@ class ServerModeEndToEndTest {
                         HttpResponse.BodyHandlers.ofString()),
                 HTTP.send(HttpRequest.newBuilder(webhook).header("X-GitHub-Event", "push")
                         .POST(HttpRequest.BodyPublishers.ofString("{")).build(), HttpResponse.BodyHandlers.ofString()));
-        assertThat(answers).extracting(HttpResponse::statusCode).containsExactly(405, 404, 401);
+        assertThat(answers).extracting(HttpResponse::statusCode).containsExactly(404, 404, 401);
         assertThat(answers).allSatisfy(answer -> assertThat(answer.body()).doesNotContain("Exception", "at org.",
                 "at io.", "trace"));
     }
@@ -224,7 +212,8 @@ class ServerModeEndToEndTest {
     @Test
     @Order(3)
     void aNoteWithNonAsciiNameAppearsInTheSite() throws Exception {
-        String after = sourceCommit("add a note with Polish letters", "zażółć.md", note("Zażółć gęślą jaźń", true));
+        String after = sourceCommit("add a note with Polish letters", "zażółć.md",
+                note("Zażółć gęślą jaźń", true));
         assertThat(push(after)).isEqualTo(202);
         assertThat(awaitNewDeployment()).isEqualTo("deployed");
         assertThat(targetFile("assets/js/data.js")).contains("zażółć");

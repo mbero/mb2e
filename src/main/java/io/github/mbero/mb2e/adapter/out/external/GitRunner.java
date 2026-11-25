@@ -35,12 +35,25 @@ final class GitRunner {
 
     /** The outcome of a finished invocation; both texts are already masked. */
     record Result(int exit, String out, String err) {
+
+        /** Returns this result when git succeeded; otherwise the failure of {@link #failure}. */
+        Result orFail(String what, Object where) {
+            if (exit != 0) {
+                throw failure(what, where);
+            }
+            return this;
+        }
+
+        /** Returns the failure that names the command, the place and git's error. */
+        GitFailure failure(String what, Object where) {
+            return new GitFailure("git " + what + " failed in " + where + ": " + err.trim(), null);
+        }
     }
 
     /**
      * Runs {@code git} with the given arguments and masks every non-blank secret in the texts it returns.
      *
-     * @throws GitFailure when git cannot start or is interrupted; a {@code GitTimeout} when it exceeds the budget
+     * @throws GitFailure when git cannot start or is interrupted; a {@code GitTimeoutFailure} when it exceeds the budget
      */
     Result run(Path directory, Duration budget, Map<String, String> extraEnvironment, List<String> secrets,
             String... arguments) {
@@ -66,7 +79,7 @@ final class GitRunner {
             CompletableFuture<String> err = read(process.getErrorStream());
             if (!process.waitFor(budget.toMillis(), TimeUnit.MILLISECONDS)) {
                 kill(process);
-                throw new GitTimeout("git " + what + " did not answer within " + budget.toMillis() + " ms in "
+                throw new GitTimeoutFailure("git " + what + " did not answer within " + budget.toMillis() + " ms in "
                         + directory);
             }
             return new Result(process.exitValue(), mask(drain(out, what), secrets), mask(drain(err, what), secrets));

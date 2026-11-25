@@ -1,7 +1,5 @@
 package io.github.mbero.mb2e.adapter.in.web;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -16,12 +14,14 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 class HealthControllerTest {
 
-    private final DeployQueue queue = mock(DeployQueue.class);
-    private final MockMvc mvc = MockMvcBuilders.standaloneSetup(new HealthController(queue)).build();
+    private Optional<DeployQueue.Last> last = Optional.empty();
+    private final MockMvc mvc = MockMvcBuilders.routerFunctions(WebRoutes.of(
+            new GithubWebhookController(reason -> DeployQueue.Result.QUEUED,
+                    new WebhookSettings("0123456789abcdef0123456789abcdef", 1024, "me/notes", "main")),
+            new HealthController(() -> last))).build();
 
     @Test
     void beforeTheFirstRunTheServiceIsUpWithNoLastDeploy() throws Exception {
-        when(queue.last()).thenReturn(Optional.empty());
         mvc.perform(get("/healthz")).andExpect(status().isOk())
                 .andExpect(content().json("{\"status\":\"up\",\"lastDeploy\":null}"));
     }
@@ -30,7 +30,7 @@ class HealthControllerTest {
     void aFailedRunKeepsTheServiceUpAndShowsNoPathOrUrl() throws Exception {
         DeployReport failed = new DeployReport("11111111-2222", DeployReport.FAILED, "Git failed",
                 "git push failed in /var/lib/mb2e/target: https://github.com/me/x", "push", "s", null, 3, null);
-        when(queue.last()).thenReturn(Optional.of(new DeployQueue.Last(failed, Instant.parse("2026-11-25T10:00:00Z"))));
+        last = Optional.of(new DeployQueue.Last(failed, Instant.parse("2026-11-25T10:00:00Z")));
         mvc.perform(get("/healthz")).andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("up"))
                 .andExpect(jsonPath("$.lastDeploy.outcome").value("failed"))

@@ -16,6 +16,7 @@ import org.springframework.context.ApplicationContext;
         "mb2e.server.workspace=target/test-workspaces/server-mode-test",
         "mb2e.server.sync-on-start=false",
         "mb2e.server.source.url=https://github.com/me/notes",
+        "mb2e.server.source.repository=me/notes",
         "mb2e.server.source.token=source-token",
         "mb2e.server.target.url=https://github.com/me/me.github.io",
         "mb2e.server.target.token=target-token",

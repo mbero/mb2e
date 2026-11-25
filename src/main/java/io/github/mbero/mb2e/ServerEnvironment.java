@@ -1,5 +1,6 @@
 package io.github.mbero.mb2e;
 
+import io.github.mbero.mb2e.infrastructure.config.ServerProperties;
 import java.nio.file.Path;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -48,7 +49,7 @@ final class ServerEnvironment {
         if (identity(sourceUrl).equals(identity(targetUrl))) {
             throw refused("MB2E_SOURCE_REPO_URL and MB2E_TARGET_REPO_URL name the same repository.");
         }
-        String workspace = absolute("MB2E_WORKSPACE", "/var/lib/mb2e");
+        String workspace = absolute("MB2E_WORKSPACE", ServerProperties.DEFAULT_WORKSPACE);
         if (Path.of(workspace).getParent() == null) {
             throw refused("MB2E_WORKSPACE must not be the file-system root.");
         }
@@ -65,6 +66,7 @@ final class ServerEnvironment {
             throw refused("MB2E_WEBHOOK_SECRET must have at least " + MIN_SECRET_LENGTH + " characters.");
         }
         out.put("mb2e.server.source.url", sourceUrl);
+        out.put("mb2e.server.source.repository", identity(sourceUrl));
         out.put("mb2e.server.source.branch", branch("MB2E_SOURCE_BRANCH"));
         out.put("mb2e.server.source.subdir", subdir);
         out.put("mb2e.server.source.token", sourceToken);
@@ -72,10 +74,12 @@ final class ServerEnvironment {
         out.put("mb2e.server.target.branch", branch("MB2E_TARGET_BRANCH"));
         out.put("mb2e.server.target.token", targetToken);
         out.put("mb2e.server.webhook.secret", webhook);
-        out.put("mb2e.server.webhook.max-body-bytes", number("MB2E_WEBHOOK_MAX_BODY_BYTES", 26214400L, 1, MAX_BODY_BYTES));
+        out.put("mb2e.server.webhook.max-body-bytes", number("MB2E_WEBHOOK_MAX_BODY_BYTES",
+                Long.parseLong(ServerProperties.DEFAULT_MAX_BODY_BYTES), 1, MAX_BODY_BYTES));
         out.put("mb2e.server.git.user-name", required("MB2E_GIT_USER_NAME"));
         out.put("mb2e.server.git.user-email", required("MB2E_GIT_USER_EMAIL"));
-        out.put("mb2e.server.git.network-timeout-seconds", number("MB2E_GIT_NETWORK_TIMEOUT_SECONDS", 120, 10, 900));
+        out.put("mb2e.server.git.network-timeout-seconds", number("MB2E_GIT_NETWORK_TIMEOUT_SECONDS",
+                Long.parseLong(ServerProperties.DEFAULT_NETWORK_TIMEOUT_SECONDS), 10, 900));
         out.put("mb2e.server.workspace", workspace);
         out.put("mb2e.server.sync-on-start", bool("MB2E_SYNC_ON_START", true));
         out.put("mb2e.server.poll-interval-seconds", poll());
@@ -166,7 +170,7 @@ final class ServerEnvironment {
     }
 
     private String branch(String name) {
-        String value = optional(name, "main");
+        String value = optional(name, ServerProperties.DEFAULT_BRANCH);
         if (!BRANCH.matcher(value).matches() || value.contains("..") || value.startsWith("refs/")
                 || value.endsWith("/") || value.endsWith(".lock")) {
             throw refused(name + " must be a branch name, not a full reference.");

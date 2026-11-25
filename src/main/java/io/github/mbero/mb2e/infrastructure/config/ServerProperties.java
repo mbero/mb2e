@@ -9,7 +9,7 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
  */
 @ConfigurationProperties(prefix = "mb2e.server")
 public record ServerProperties(
-        @DefaultValue("/var/lib/mb2e") String workspace,
+        @DefaultValue(ServerProperties.DEFAULT_WORKSPACE) String workspace,
         @DefaultValue("true") boolean syncOnStart,
         @DefaultValue("0") int pollIntervalSeconds,
         @DefaultValue Source source,
@@ -17,20 +17,27 @@ public record ServerProperties(
         @DefaultValue Webhook webhook,
         @DefaultValue Git git) {
 
-    /** The repository that holds the notes. */
-    public record Source(String url, @DefaultValue("main") String branch, @DefaultValue("") String subdir,
-            Secret token) {
+    /** The default of each setting that the launcher also needs; one literal for both. */
+    public static final String DEFAULT_WORKSPACE = "/var/lib/mb2e";
+    public static final String DEFAULT_BRANCH = "main";
+    public static final String DEFAULT_MAX_BODY_BYTES = "26214400";
+    public static final String DEFAULT_NETWORK_TIMEOUT_SECONDS = "120";
+
+    /** The repository that holds the notes; {@code repository} is its {@code owner/name}, which webhooks carry. */
+    public record Source(String url, String repository, @DefaultValue(DEFAULT_BRANCH) String branch,
+            @DefaultValue("") String subdir, Secret token) {
     }
 
     /** The repository that GitHub Pages serves. */
-    public record Target(String url, @DefaultValue("main") String branch, Secret token) {
+    public record Target(String url, @DefaultValue(DEFAULT_BRANCH) String branch, Secret token) {
     }
 
     /** The webhook endpoint. */
-    public record Webhook(Secret secret, @DefaultValue("26214400") long maxBodyBytes) {
+    public record Webhook(Secret secret, @DefaultValue(DEFAULT_MAX_BODY_BYTES) long maxBodyBytes) {
     }
 
     /** The author of the target commits and the time budget of a network command. */
-    public record Git(String userName, String userEmail, @DefaultValue("120") int networkTimeoutSeconds) {
+    public record Git(String userName, String userEmail,
+            @DefaultValue(DEFAULT_NETWORK_TIMEOUT_SECONDS) int networkTimeoutSeconds) {
     }
 }

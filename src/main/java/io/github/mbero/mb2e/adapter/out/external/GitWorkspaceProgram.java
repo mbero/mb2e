@@ -9,49 +9,69 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
 /**
- * A shallow clone of one branch, kept by the git program and reset to the remote before each use.
- * <p>The directory must be named {@code source} or {@code target}: every delete below is guarded by
- * that name. A clone that is corrupt, has another origin, or cannot be updated is deleted and cloned again.
- * An empty remote gives an unborn branch for {@code target}; the first push creates the branch.
+ * A shallow clone of one branch in {@code <workspace>/source} or {@code <workspace>/target}, kept by the git
+ * program and reset to the remote before each use. The role fixes the directory, so a delete can reach no
+ * other path. A clone that is corrupt, has another origin, or cannot be updated is deleted and cloned again.
+ * An empty remote gives an unborn branch for the target; the first push creates the branch.
  */
 public class GitWorkspaceProgram implements GitWorkspace {
 
-    private static final List<String> NAMES = List.of("source", "target");
+    /** What the clone is for; it names the directory inside the workspace. */
+    public enum Role {
+        SOURCE,
+        TARGET;
 
+        String directoryName() {
+            return name().toLowerCase(java.util.Locale.ROOT);
+        }
+    }
+
+    /** The repository to clone: its URL, its branch, and the credentials that reach it. */
+    public record Remote(String url, String branch, GitCredentials credentials) {
+    }
+
+    /** The author of the commits that the clone makes. */
+    public record Author(String name, String email) {
+    }
+
+    /** The time budgets of a local git command and of a command that uses the network. */
+    public record Budgets(Duration local, Duration network) {
+    }
+
+    private final Path workspace;
+    private final Role role;
     private final Path directory;
     private final String url;
     private final String branch;
     private final GitCredentials credentials;
-    private final String authorName;
-    private final String authorEmail;
+    private final Author author;
     private final Duration localBudget;
     private final Duration networkBudget;
     private final GitRunner runner = new GitRunner();
 
-    public GitWorkspaceProgram(Path directory, String url, String branch, GitCredentials credentials, String authorName,
-            String authorEmail, Duration localBudget, Duration networkBudget) {
-        this.directory = directory.toAbsolutePath().normalize();
-        this.url = url;
-        this.branch = branch;
-        this.credentials = credentials;
-        this.authorName = authorName;
-        this.authorEmail = authorEmail;
-        this.localBudget = localBudget;
-        this.networkBudget = networkBudget;
+    public GitWorkspaceProgram(Path workspace, Role role, Remote remote, Author author, Budgets budgets) {
+        this.workspace = workspace.toAbsolutePath().normalize();
+        this.role = role;
+        this.directory = this.workspace.resolve(role.directoryName());
+        this.url = remote.url();
+        this.branch = remote.branch();
+        this.credentials = remote.credentials();
+        this.author = author;
+        this.localBudget = budgets.local();
+        this.networkBudget = budgets.network();
     }
 
     @Override
     public String sync() {
         guard();
         try {
-            Files.createDirectories(directory.getParent());
+            Files.createDirectories(workspace);
         } catch (IOException failure) {
-            throw new GitFailure("Cannot create " + directory.getParent() + ": " + failure.getMessage(), failure);
+            throw new GitFailure("Cannot create " + workspace + ": " + failure.getMessage(), failure);
         }
         if (!Files.isRegularFile(directory.resolve(".git/HEAD")) || !originIsConfigured()) {
             replaceClone();
@@ -59,7 +79,7 @@ public class GitWorkspaceProgram implements GitWorkspace {
             removeStaleLocks();
             try {
                 update();
-            } catch (GitTimeout timeout) {
+            } catch (GitTimeoutFailure timeout) {
                 throw timeout;
             } catch (GitFailure failure) {
                 replaceClone();
@@ -78,7 +98,7 @@ public class GitWorkspaceProgram implements GitWorkspace {
     public String commitAll(String subject, String body) {
         guard();
         require(inside(localBudget, "add", "-A"));
-        require(inside(localBudget, "-c", "user.name=" + authorName, "-c", "user.email=" + authorEmail,
+        require(inside(localBudget, "-c", "user.name=" + author.name(), "-c", "user.email=" + author.email(),
                 "-c", "commit.gpgsign=false", "commit", "-q", "-m", subject, "-m", body));
         return head();
     }
@@ -95,20 +115,14 @@ public class GitWorkspaceProgram implements GitWorkspace {
         if (rejected) {
             return PushOutcome.REJECTED;
         }
-        throw failure(result, "push");
+        throw result.failure("push", directory);
     }
 
-    /** Refuses any directory that is not named {@code source} or {@code target}, before anything is deleted. */
+    /** Refuses the file-system root as the workspace, before anything is deleted. */
     private void guard() {
-        Path name = directory.getFileName();
-        if (name == null || directory.getParent() == null || !NAMES.contains(name.toString())) {
-            throw new GitFailure("Refused: the workspace directory must be named 'source' or 'target': "
-                    + directory, null);
+        if (workspace.getParent() == null) {
+            throw new GitFailure("Refused: the workspace must not be the file-system root: " + workspace, null);
         }
-    }
-
-    private boolean isSource() {
-        return "source".equals(directory.getFileName().toString());
     }
 
     private boolean originIsConfigured() {
@@ -139,7 +153,7 @@ public class GitWorkspaceProgram implements GitWorkspace {
         GitRunner.Result remote = outside(networkBudget, "ls-remote", "--heads", url, branch);
         require(remote);
         if (remote.out().isBlank()) {
-            if (isSource()) {
+            if (role == Role.SOURCE) {
                 throw new GitFailure("The source repository has no branch '" + branch + "'.", null);
             }
             require(outside(localBudget, "init", "-q", directory.toString()));
@@ -180,23 +194,16 @@ public class GitWorkspaceProgram implements GitWorkspace {
 
     /** Runs git in the workspace directory, for the commands that create the clone. */
     private GitRunner.Result outside(Duration budget, String... arguments) {
-        return runner.run(directory.getParent(), budget, environment(), credentials.secrets(), arguments);
+        return runner.run(workspace, budget, environment(), credentials.secrets(), arguments);
     }
 
     private Map<String, String> environment() {
         Map<String, String> environment = new HashMap<>(credentials.environment());
-        environment.put("GIT_CEILING_DIRECTORIES", directory.getParent().toString());
+        environment.put("GIT_CEILING_DIRECTORIES", workspace.toString());
         return environment;
     }
 
     private GitRunner.Result require(GitRunner.Result result) {
-        if (result.exit() != 0) {
-            throw failure(result, "command");
-        }
-        return result;
-    }
-
-    private GitFailure failure(GitRunner.Result result, String what) {
-        return new GitFailure("git " + what + " failed in " + directory + ": " + result.err().trim(), null);
+        return result.orFail("command", directory);
     }
 }

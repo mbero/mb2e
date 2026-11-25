@@ -2,7 +2,10 @@ package io.github.mbero.mb2e.infrastructure.config;
 
 import io.github.mbero.mb2e.adapter.in.log.StepLog;
 import io.github.mbero.mb2e.adapter.in.web.DeployQueue;
+import io.github.mbero.mb2e.adapter.in.web.GithubWebhookController;
+import io.github.mbero.mb2e.adapter.in.web.HealthController;
 import io.github.mbero.mb2e.adapter.in.web.PollScheduler;
+import io.github.mbero.mb2e.adapter.in.web.WebRoutes;
 import io.github.mbero.mb2e.adapter.in.web.WebhookSettings;
 import io.github.mbero.mb2e.adapter.out.external.GitCredentials;
 import io.github.mbero.mb2e.adapter.out.external.GitWorkspaceProgram;
@@ -12,8 +15,6 @@ import io.github.mbero.mb2e.domain.port.out.GitWorkspace;
 import io.github.mbero.mb2e.domain.service.DeployService;
 import java.nio.file.Path;
 import java.time.Duration;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
@@ -21,6 +22,8 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.function.RouterFunction;
+import org.springframework.web.servlet.function.ServerResponse;
 
 /**
  * Beans of the server mode: the workspace lock, the two git clones, the deploy use case, the queue and the
@@ -31,7 +34,6 @@ import org.springframework.context.annotation.Configuration;
 @EnableConfigurationProperties(ServerProperties.class)
 public class ServerConfig {
 
-    private static final Pattern REPOSITORY = Pattern.compile("^https://github\\.com/([^/]+/[^/]+?)(\\.git)?$");
     private static final Duration LOCAL_BUDGET = Duration.ofSeconds(30);
     private static final int ATTEMPTS = 3;
     private static final Duration SHUTDOWN_WAIT = Duration.ofSeconds(60);
@@ -44,21 +46,23 @@ public class ServerConfig {
     @Bean
     GitWorkspace sourceWorkspace(ServerProperties properties, WorkspaceLock lock) {
         ServerProperties.Source source = properties.source();
-        return workspace("source", properties, source.url(), source.branch(), source.token());
+        return workspace(GitWorkspaceProgram.Role.SOURCE, properties, source.url(), source.branch(), source.token());
     }
 
     @Bean
     GitWorkspace targetWorkspace(ServerProperties properties, WorkspaceLock lock) {
         ServerProperties.Target target = properties.target();
-        return workspace("target", properties, target.url(), target.branch(), target.token());
+        return workspace(GitWorkspaceProgram.Role.TARGET, properties, target.url(), target.branch(), target.token());
     }
 
-    private static GitWorkspace workspace(String name, ServerProperties properties, String url, String branch,
-            Secret token) {
+    private static GitWorkspace workspace(GitWorkspaceProgram.Role role, ServerProperties properties, String url,
+            String branch, Secret token) {
         GitCredentials credentials = token == null ? GitCredentials.none() : GitCredentials.httpsToken(token.value());
-        return new GitWorkspaceProgram(Path.of(properties.workspace(), name), url, branch, credentials,
-                properties.git().userName(), properties.git().userEmail(), LOCAL_BUDGET,
-                Duration.ofSeconds(properties.git().networkTimeoutSeconds()));
+        return new GitWorkspaceProgram(Path.of(properties.workspace()), role,
+                new GitWorkspaceProgram.Remote(url, branch, credentials),
+                new GitWorkspaceProgram.Author(properties.git().userName(), properties.git().userEmail()),
+                new GitWorkspaceProgram.Budgets(LOCAL_BUDGET,
+                        Duration.ofSeconds(properties.git().networkTimeoutSeconds())));
     }
 
     @Bean
@@ -74,10 +78,23 @@ public class ServerConfig {
 
     @Bean
     WebhookSettings webhookSettings(ServerProperties properties) {
-        Matcher matcher = REPOSITORY.matcher(properties.source().url());
-        String repository = matcher.matches() ? matcher.group(1) : properties.source().url();
         return new WebhookSettings(properties.webhook().secret().value(), properties.webhook().maxBodyBytes(),
-                repository, properties.source().branch());
+                properties.source().repository(), properties.source().branch());
+    }
+
+    @Bean
+    GithubWebhookController githubWebhookController(DeployQueue queue, WebhookSettings settings) {
+        return new GithubWebhookController(queue, settings);
+    }
+
+    @Bean
+    HealthController healthController(DeployQueue queue) {
+        return new HealthController(queue);
+    }
+
+    @Bean
+    RouterFunction<ServerResponse> webRoutes(GithubWebhookController webhook, HealthController health) {
+        return WebRoutes.of(webhook, health);
     }
 
     /** Runs one deployment at start-up, so a push that arrived while the service was down is caught up. */

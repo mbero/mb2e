@@ -32,46 +32,53 @@ public class DeployService implements DeployUseCase {
 
     @Override
     public DeployReport deploy(String reason) {
-        int attempts = 0;
-        String sourceCommit = null;
-        String targetCommit = null;
-        RunReport run = null;
+        Progress progress = new Progress(reason);
         try {
-            while (attempts < maxAttempts) {
-                attempts++;
-                sourceCommit = source.sync();
+            while (progress.attempts < maxAttempts) {
+                progress.attempts++;
+                progress.sourceCommit = source.sync();
                 target.sync();
-                run = pipeline.run(false, false);
-                if (run.isRefused()) {
-                    return report(DeployReport.REFUSED, run.title(), run.detail(), reason, sourceCommit, null,
-                            attempts, run);
+                progress.run = pipeline.run(false, false);
+                if (progress.run.isRefused()) {
+                    return progress.report(DeployReport.REFUSED, progress.run.title(), progress.run.detail());
                 }
                 if (!target.hasChanges()) {
-                    return report(DeployReport.UP_TO_DATE, null, null, reason, sourceCommit, null, attempts, run);
+                    return progress.report(DeployReport.UP_TO_DATE, null, null);
                 }
-                targetCommit = target.commitAll(commitSubject, "Source commit: " + sourceCommit);
+                progress.targetCommit = target.commitAll(commitSubject, "Source commit: " + progress.sourceCommit);
                 if (target.push() == GitWorkspace.PushOutcome.PUSHED) {
-                    return report(DeployReport.DEPLOYED, null, null, reason, sourceCommit, targetCommit, attempts,
-                            run);
+                    return progress.report(DeployReport.DEPLOYED, null, null);
                 }
             }
-            return report(DeployReport.FAILED, "The target branch moved",
-                    "The push was rejected " + attempts + " times; the next trigger tries again.", reason,
-                    sourceCommit, targetCommit, attempts, run);
+            return progress.report(DeployReport.FAILED, "The target branch moved",
+                    "The push was rejected " + progress.attempts + " times; the next trigger tries again.");
         } catch (GitFailure failure) {
-            return report(DeployReport.FAILED, "Git failed", failure.getMessage(), reason, sourceCommit,
-                    targetCommit, attempts, run);
+            return progress.report(DeployReport.FAILED, "Git failed", failure.getMessage());
         } catch (RuntimeException failure) {
             String message = failure.getMessage();
-            return report(DeployReport.FAILED, "Deployment failed",
-                    message == null || message.isBlank() ? failure.getClass().getSimpleName() : message, reason,
-                    sourceCommit, targetCommit, attempts, run);
+            return progress.report(DeployReport.FAILED, "Deployment failed",
+                    message == null || message.isBlank() ? failure.getClass().getSimpleName() : message);
         }
     }
 
-    private static DeployReport report(String outcome, String title, String detail, String reason,
-            String sourceCommit, String targetCommit, int attempts, RunReport run) {
-        String traceId = run != null ? run.traceId() : UUID.randomUUID().toString();
-        return new DeployReport(traceId, outcome, title, detail, reason, sourceCommit, targetCommit, attempts, run);
+    /** What one deployment has reached so far; any exit turns it into a report. */
+    private static final class Progress {
+
+        private final String reason;
+        private int attempts;
+        private String sourceCommit;
+        private String targetCommit;
+        private RunReport run;
+
+        private Progress(String reason) {
+            this.reason = reason;
+        }
+
+        private DeployReport report(String outcome, String title, String detail) {
+            String traceId = run != null ? run.traceId() : UUID.randomUUID().toString();
+            String commit = DeployReport.DEPLOYED.equals(outcome) || DeployReport.FAILED.equals(outcome)
+                    ? targetCommit : null;
+            return new DeployReport(traceId, outcome, title, detail, reason, sourceCommit, commit, attempts, run);
+        }
     }
 }

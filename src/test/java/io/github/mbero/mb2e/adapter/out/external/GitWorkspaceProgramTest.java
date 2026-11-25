@@ -61,9 +61,18 @@ class GitWorkspaceProgramTest {
         return workspace(directory, url);
     }
 
+    /** Builds the clone for a directory named {@code source} or {@code target}, as the role of that name. */
     private GitWorkspaceProgram workspace(Path directory, String remote) {
-        return new GitWorkspaceProgram(directory, remote, "main", GitCredentials.none(), "Mb2e Bot", "bot@example.com",
-                Duration.ofSeconds(30), Duration.ofSeconds(60));
+        return workspace(directory, remote, "main");
+    }
+
+    private GitWorkspaceProgram workspace(Path directory, String remote, String branch) {
+        GitWorkspaceProgram.Role role = GitWorkspaceProgram.Role.valueOf(
+                directory.getFileName().toString().toUpperCase(java.util.Locale.ROOT));
+        return new GitWorkspaceProgram(directory.getParent(), role,
+                new GitWorkspaceProgram.Remote(remote, branch, GitCredentials.none()),
+                new GitWorkspaceProgram.Author("Mb2e Bot", "bot@example.com"),
+                new GitWorkspaceProgram.Budgets(Duration.ofSeconds(30), Duration.ofSeconds(60)));
     }
 
     private Path target(String owner) {
@@ -204,25 +213,34 @@ class GitWorkspaceProgramTest {
     }
 
     @Test
-    void aDirectoryThatIsNotSourceOrTargetIsRefusedBeforeAnyDelete() throws Exception {
+    void theFileSystemRootIsRefusedAsAWorkspaceBeforeAnyDelete() {
+        GitWorkspaceProgram workspace = new GitWorkspaceProgram(Path.of("/"), GitWorkspaceProgram.Role.TARGET,
+                new GitWorkspaceProgram.Remote(url, "main", GitCredentials.none()),
+                new GitWorkspaceProgram.Author("n", "e@example.com"),
+                new GitWorkspaceProgram.Budgets(Duration.ofSeconds(30), Duration.ofSeconds(60)));
+        assertThatThrownBy(workspace::sync).isInstanceOf(GitFailure.class).hasMessageContaining("Refused");
+        assertThatThrownBy(workspace::hasChanges).isInstanceOf(GitFailure.class);
+        assertThatThrownBy(() -> workspace.commitAll("s", "b")).isInstanceOf(GitFailure.class);
+        assertThatThrownBy(workspace::push).isInstanceOf(GitFailure.class);
+    }
+
+    @Test
+    void aCloneTouchesOnlyItsOwnDirectoryInTheWorkspace() throws Exception {
         seed("a.txt", "1");
-        Path precious = Files.createDirectories(temp.resolve("precious"));
-        Files.writeString(precious.resolve("keep.txt"), "keep");
-        for (Path directory : List.of(precious, temp.resolve("/"), Path.of("/"))) {
-            GitWorkspaceProgram workspace = workspace(directory);
-            assertThatThrownBy(workspace::sync).isInstanceOf(GitFailure.class).hasMessageContaining("Refused");
-            assertThatThrownBy(workspace::hasChanges).isInstanceOf(GitFailure.class);
-            assertThatThrownBy(() -> workspace.commitAll("s", "b")).isInstanceOf(GitFailure.class);
-            assertThatThrownBy(workspace::push).isInstanceOf(GitFailure.class);
-        }
-        assertThat(precious.resolve("keep.txt")).hasContent("keep");
+        Path workspace = Files.createDirectories(temp.resolve("w13"));
+        Files.writeString(workspace.resolve("keep.txt"), "keep");
+        Files.createDirectories(workspace.resolve("source"));
+        Files.writeString(workspace.resolve("source/keep.txt"), "keep");
+        workspace(workspace.resolve("target")).sync();
+        assertThat(workspace.resolve("keep.txt")).hasContent("keep");
+        assertThat(workspace.resolve("source/keep.txt")).hasContent("keep");
+        assertThat(workspace.resolve("target/a.txt")).hasContent("1");
     }
 
     @Test
     void aMissingRemoteBranchOfAnExistingCloneFallsBackToANewCloneAndFailsClearly() throws Exception {
         seed("a.txt", "1");
-        GitWorkspaceProgram workspace = new GitWorkspaceProgram(temp.resolve("w12").resolve("source"), url, "nope",
-                GitCredentials.none(), "n", "e@example.com", Duration.ofSeconds(30), Duration.ofSeconds(60));
+        GitWorkspaceProgram workspace = workspace(temp.resolve("w12").resolve("source"), url, "nope");
         assertThatThrownBy(workspace::sync).isInstanceOf(GitFailure.class).hasMessageContaining("no branch 'nope'");
     }
 }

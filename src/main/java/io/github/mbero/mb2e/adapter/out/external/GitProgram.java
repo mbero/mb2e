@@ -74,10 +74,7 @@ public class GitProgram implements GitRepository {
     }
 
     private GitRunner.Result require(GitRunner.Result result, String what) {
-        if (result.exit() != 0) {
-            throw new GitFailure("git " + what + " failed in " + directory + ": " + result.err().trim(), null);
-        }
-        return result;
+        return result.orFail(what, directory);
     }
 
     private GitRunner.Result git(String... arguments) {

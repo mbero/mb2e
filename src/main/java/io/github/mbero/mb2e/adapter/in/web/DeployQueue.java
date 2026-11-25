@@ -17,7 +17,7 @@ import org.springframework.beans.factory.DisposableBean;
  * <p>Each run starts with a fresh sync, so one waiting run covers every later trigger: a burst of
  * pushes gives at most two runs, and two runs never overlap. {@link #submit} never blocks.
  */
-public class DeployQueue implements DisposableBean {
+public class DeployQueue implements DeployTrigger, DeployHistory, DisposableBean {
 
     /** What happened to a trigger. */
     public enum Result {
@@ -48,7 +48,7 @@ public class DeployQueue implements DisposableBean {
         this.shutdownWait = shutdownWait;
     }
 
-    /** Starts a run now, waits in the one slot, or is covered by the run that already waits. */
+    @Override
     public Result submit(String reason) {
         if (executor.isShutdown()) {
             return Result.STOPPED;
@@ -61,7 +61,7 @@ public class DeployQueue implements DisposableBean {
         }
     }
 
-    /** Returns the newest finished deployment, empty before the first one. */
+    @Override
     public Optional<Last> last() {
         return Optional.ofNullable(last);
     }
