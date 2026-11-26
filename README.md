@@ -424,6 +424,45 @@ Tokens: set `MB2E_GITHUB_TOKEN`, or both `MB2E_SOURCE_TOKEN` and `MB2E_TARGET_TO
 - Git LFS is not supported. If the notes repository stores images with Git LFS, the clone holds pointer files and the published images do not load.
 - Failure notifications are not built in. Watch the log and `/healthz`.
 
+### Dashboard
+
+An optional read-only page at `https://<your-host>/dashboard/`. It answers one question: did my last push deploy, and if not, why? It shows the state of the service, the last deployment with its cause, and the newest 50 deployments. It refreshes every 15 seconds. Only one GitHub account can sign in.
+
+Switch it on with three variables. Set all three or none; a partial set stops the start-up with a message that names the missing variable.
+
+| Variable | Meaning |
+|---|---|
+| `MB2E_DASHBOARD_ALLOWED_LOGIN` | The one GitHub login that may sign in, for example `mbero`. Case does not matter. |
+| `MB2E_DASHBOARD_OAUTH_CLIENT_ID` | The client ID of your GitHub OAuth App. |
+| `MB2E_DASHBOARD_OAUTH_CLIENT_SECRET` | Its client secret; `_FILE` works as for the other secrets. |
+| `MB2E_DASHBOARD_FILES` | Optional. The folder of the built UI; the image puts it at `/opt/mb2e/dashboard`. |
+
+Create the GitHub OAuth App once: your account, Settings, Developer settings, OAuth Apps, New OAuth App.
+
+| Field | Value |
+|---|---|
+| Homepage URL | `https://<your-host>/dashboard/` |
+| Authorization callback URL | `https://<your-host>/login/oauth2/code/github` |
+| Enable Device Flow | off |
+
+The app asks for no scope: mb2e reads only your public login and then drops the GitHub token. Make a second OAuth App for a local run, with the callback `http://localhost:8080/login/oauth2/code/github`; GitHub allows one callback address per app.
+
+The sign-in needs HTTPS: the session cookie is `Secure`. In production, put [`deploy/Caddyfile`](deploy/Caddyfile) in front of the service; Caddy gets the certificate and forwards to `127.0.0.1:8080`. Browsers accept a `Secure` cookie on `http://localhost`, so a local run works without TLS.
+
+Local run without Docker:
+
+```bash
+(cd ui && npm ci && npx ng build)
+export MB2E_DASHBOARD_FILES="$PWD/ui/dist/mb2e-dashboard/browser"
+# plus the MB2E_* variables of .env.example, with the local OAuth App
+java -jar target/mb2e.jar serve
+open http://localhost:8080/dashboard/
+```
+
+For work on the UI itself, `cd ui && npx ng serve` serves it on port 4200 and forwards the API to port 8080 (`ui/proxy.conf.json`). Sign in once at `http://localhost:8080/dashboard/`: a cookie does not depend on the port, so the session also works on port 4200.
+
+The history lives in `history.db` in the workspace volume, so it survives a restart. A restart ends every session; sign in again. The service stays usable without the dashboard: the webhook and `/healthz` never need a login.
+
 ## Safety nets
 
 - **The vault and the template are read-only.** mb2e never writes to them, and `build` writes nothing at all.

@@ -29,6 +29,10 @@ Open a document only when its title matches the question.
 | [`decisions/0003-deploy-by-git-clones-and-the-git-program.md`](decisions/0003-deploy-by-git-clones-and-the-git-program.md) | Deploy with two shallow clones and the git program | decision | current | 2026-11-25 |
 | [`decisions/0004-signed-webhook-and-one-slot-queue.md`](decisions/0004-signed-webhook-and-one-slot-queue.md) | Accept a signed webhook and run one deployment at a time | decision | current | 2026-11-25 |
 | [`decisions/0005-one-container-one-volume-one-replica.md`](decisions/0005-one-container-one-volume-one-replica.md) | Run one container on one volume with a read-only root | decision | current | 2026-11-25 |
+| [`decisions/0006-deployment-history-in-sqlite.md`](decisions/0006-deployment-history-in-sqlite.md) | Keep the deployment history in one SQLite file on the workspace volume | decision | current | 2026-11-26 |
+| [`decisions/0007-angular-dashboard-served-by-the-service.md`](decisions/0007-angular-dashboard-served-by-the-service.md) | Build the dashboard as an Angular app in the image and serve it from the service | decision | current | 2026-11-26 |
+| [`decisions/0008-github-oauth-for-one-login.md`](decisions/0008-github-oauth-for-one-login.md) | Sign in to the dashboard with GitHub OAuth for one allowed login | decision | current | 2026-11-26 |
+| [`decisions/0009-server-side-session-with-lax-cookie.md`](decisions/0009-server-side-session-with-lax-cookie.md) | Keep the login in a server-side session with a SameSite=Lax cookie | decision | current | 2026-11-26 |
 | [`design/dashboard/CLAUDE_DESIGN_BRIEF.md`](design/dashboard/CLAUDE_DESIGN_BRIEF.md) | Dashboard design brief | knowledge | current | 2026-11-26 |
 | [`design/dashboard/DESIGN_HANDOFF.md`](design/dashboard/DESIGN_HANDOFF.md) | Dashboard design handoff | knowledge | current | 2026-11-26 |
 | [`knowledge/server-mode.md`](knowledge/server-mode.md) | Server mode — how a push becomes a deployed site | knowledge | current | 2026-11-26 |
