@@ -1,0 +1,19 @@
+name: Knowledge base
+
+on:
+  pull_request:
+    paths:
+      - 'docs/**'
+      - 'AGENTS.md'
+      - '.agents/**'
+      - 'profiles/**'
+  push:
+    branches: [main]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run the knowledge base check
+        run: bootstrap/check.sh

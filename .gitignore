@@ -6,14 +6,6 @@ target/
 application_local_paths.yaml
 .env
 
-# Knowledge base for AI agents; kept local for now
-AGENTS.md
-CLAUDE.md
-.agents/
-.claude/
-.github/workflows/knowledge-base.yml
-.editorconfig
-.template-version
-bootstrap/
-docs/
-profiles/
+# Local Claude Code settings; the shared slash commands stay tracked
+.claude/*
+!.claude/commands/

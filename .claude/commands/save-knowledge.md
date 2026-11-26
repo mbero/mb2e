@@ -1,0 +1,8 @@
+---
+description: Save the last answer into the knowledge base
+---
+
+Follow the procedure in `.agents/procedures/save-knowledge.md`.
+
+Read the whole file first, then execute every step in order. Do not skip a step
+because it looks unnecessary. If a step cannot be completed, say which one and why.
