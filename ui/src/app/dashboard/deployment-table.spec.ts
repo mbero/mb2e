@@ -26,6 +26,7 @@ describe('DeploymentTable', () => {
     const element: HTMLElement = fixture.nativeElement;
     const button = element.querySelector<HTMLButtonElement>('table .expand')!;
     expect(button.getAttribute('aria-expanded')).toBe('false');
+    expect(button.getAttribute('aria-label')).toMatch(/^Show cause for 25 Nov, \d\d:14:03$/);
     button.click();
     await fixture.whenStable();
     expect(element.querySelector('table .cause-row pre')?.textContent).toContain('token expired');

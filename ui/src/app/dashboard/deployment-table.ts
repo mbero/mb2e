@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, input, signal } from '@angular/core';
-import { attempts } from '../core/format';
+import { absolute, attempts } from '../core/format';
 import { Deployment } from '../core/models';
 import { CommitLink } from '../shared/commit-link';
 import { OutcomeBadge } from '../shared/outcome-badge';
@@ -32,7 +32,7 @@ import { RelativeTime } from '../shared/relative-time';
                   @if (d.cause) {
                     <button type="button" class="expand" [attr.aria-expanded]="isOpen(d)"
                             [attr.aria-controls]="'cause-' + $index"
-                            [attr.aria-label]="(isOpen(d) ? 'Hide cause for ' : 'Show cause for ') + d.finishedAt"
+                            [attr.aria-label]="(isOpen(d) ? 'Hide cause for ' : 'Show cause for ') + local(d)"
                             (click)="toggle(d)">
                       <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor"
                            stroke-width="1.8" aria-hidden="true" [class.open]="isOpen(d)">
@@ -135,6 +135,10 @@ export class DeploymentTable {
       next.add(d.finishedAt);
     }
     this.open.set(next);
+  }
+
+  protected local(d: Deployment): string {
+    return absolute(d.finishedAt);
   }
 
   protected attemptText(d: Deployment): string {

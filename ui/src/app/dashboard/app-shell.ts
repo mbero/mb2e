@@ -48,8 +48,9 @@ import { Sidebar } from './sidebar';
               border: 2px solid var(--color-brand-fg); background: transparent; color: var(--color-brand-fg); cursor: pointer; }
       .menu:focus-visible { outline-color: var(--color-brand-fg); }
       .sidebar { position: fixed; top: 0; left: 0; bottom: 0; z-index: 40; width: min(86vw, 320px); height: auto;
-                 transform: translateX(-100%); transition: transform 180ms ease; }
-      .sidebar.is-open { transform: translateX(0); }
+                 transform: translateX(-100%); visibility: hidden;
+                 transition: transform 180ms ease, visibility 0s linear 180ms; }
+      .sidebar.is-open { transform: translateX(0); visibility: visible; transition: transform 180ms ease; }
       .scrim { position: fixed; inset: 0; z-index: 30; display: block; background: rgba(0, 0, 0, .35); }
       main { padding: 32px 20px 64px; }
     }
