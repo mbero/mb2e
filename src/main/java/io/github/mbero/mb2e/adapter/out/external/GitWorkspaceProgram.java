@@ -5,10 +5,12 @@ import io.github.mbero.mb2e.domain.port.out.GitWorkspace;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -26,7 +28,7 @@ public class GitWorkspaceProgram implements GitWorkspace {
         TARGET;
 
         String directoryName() {
-            return name().toLowerCase(java.util.Locale.ROOT);
+            return name().toLowerCase(Locale.ROOT);
         }
     }
 
@@ -171,7 +173,7 @@ public class GitWorkspaceProgram implements GitWorkspace {
     }
 
     private void deleteDirectory() {
-        if (!Files.exists(directory, java.nio.file.LinkOption.NOFOLLOW_LINKS)) {
+        if (!Files.exists(directory, LinkOption.NOFOLLOW_LINKS)) {
             return;
         }
         try (Stream<Path> walk = Files.walk(directory)) {

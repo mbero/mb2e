@@ -89,25 +89,15 @@ public class BuildService implements BuildUseCase {
     }
 
     private Assembly run(String traceId, boolean dryRun) {
-        Optional<String> unset = paths.unsetKey(false);
-        if (unset.isPresent()) {
-            return refused(traceId, dryRun, "Required path is not set", "The property " + unset.get()
-                    + " is not set.");
-        }
-        Optional<TemplateCheck.Refusal> notATemplate = TemplateCheck.shape(site);
-        if (notATemplate.isPresent()) {
-            return refused(traceId, dryRun, notATemplate.get().title(), notATemplate.get().detail());
+        Optional<Refusal> notReady = checkInputs();
+        if (notReady.isPresent()) {
+            return refused(traceId, dryRun, notReady.get().title(), notReady.get().detail());
         }
         Vault vault = vaultReader.read();
-        if (vault.status() == Vault.Status.MISSING) {
-            return refused(traceId, dryRun, "Vault directory not found",
-                    "The vault directory '" + vault.path() + "' does not exist.");
+        Optional<Refusal> noVault = checkVault(vault);
+        if (noVault.isPresent()) {
+            return refused(traceId, dryRun, noVault.get().title(), noVault.get().detail());
         }
-        if (vault.status() == Vault.Status.NOT_A_DIRECTORY) {
-            return refused(traceId, dryRun, "Vault path is not a directory",
-                    "The vault path '" + vault.path() + "' is not a directory.");
-        }
-
         List<Note> selected = select(vault);
         if (selected.isEmpty()) {
             return refused(traceId, dryRun, "No note carries the selection tag",
@@ -115,53 +105,19 @@ public class BuildService implements BuildUseCase {
         }
         Folder root = group(selected);
         List<Note> notes = flattenNotes(root, new ArrayList<>());
-
-        // First pass: titles and front matter, needed to resolve [[links]].
-        for (Note note : notes) {
-            FrontMatter.Parsed parsed = FrontMatter.parse(note.text);
-            note.front = parsed.data();
-            note.body = parsed.body();
-            note.title = titleOf(note);
-        }
-        List<String> files = vault.files().stream().sorted().toList();
-        NoteIndex index = new NoteIndex(notes.stream().map(n -> new NoteIndex.Entry(n.id, n.title)).toList(), files);
-
-        // Second pass: render every note into its one html block.
-        Map<String, NoteEntry> entries = new LinkedHashMap<>();
-        int empty = 0;
-        for (Note note : notes) {
-            List<Block> blocks = new ArrayList<>(MarkdownRenderer.render(note.body, index.forNote(note.id)));
-            if (!blocks.isEmpty() && blocks.get(0).type().equals("h1")
-                    && Js.trim(MarkdownRenderer.stripTags(blocks.get(0).html())).equals(note.title)) {
-                blocks.remove(0);
-            }
-            StringBuilder html = new StringBuilder();
-            for (int i = 0; i < blocks.size(); i++) {
-                html.append(i > 0 ? "\n" : "").append(blocks.get(i).html());
-            }
-            if (html.length() == 0) {
-                empty++;
-            }
-            entries.put(note.id, new NoteEntry(note.title, note.folder,
-                    note.front.get("date") instanceof String date ? date : "", tagsOf(note.front), html.toString()));
-        }
-
+        readFrontMatter(notes);
+        NoteIndex index = new NoteIndex(notes.stream().map(n -> new NoteIndex.Entry(n.id, n.title)).toList(),
+                vault.files().stream().sorted().toList());
+        Map<String, NoteEntry> entries = render(notes, index);
         List<TreeNode> tree = buildTree(root);
-        List<String> flat = treeOrder(tree, new ArrayList<>());
 
         List<String> warnings = new ArrayList<>();
         if (!entries.containsKey(ABOUT_ID)) {
             warnings.add("The about page is missing: no " + ABOUT_ID + ".md at the vault root carries the tag '"
                     + tag + "'.");
         }
-        boolean configured = configuredDefaultNote != null && !configuredDefaultNote.isEmpty();
-        String defaultNote = configured && entries.containsKey(configuredDefaultNote)
-                ? configuredDefaultNote
-                : (flat.isEmpty() ? "" : flat.get(0));
-        if (configured && !configuredDefaultNote.equals(defaultNote)) {
-            warnings.add("Configured start note '" + configuredDefaultNote + "' does not exist; using '"
-                    + defaultNote + "'");
-        }
+        String defaultNote = defaultNote(entries, treeOrder(tree, new ArrayList<>()), warnings);
+        int empty = (int) entries.values().stream().filter(entry -> entry.html().isEmpty()).count();
 
         String script = SiteDataJson.script(new SiteData(defaultNote, tree, entries));
         List<String> images = index.attachments();
@@ -169,6 +125,68 @@ public class BuildService implements BuildUseCase {
                 paths.template(), vault.notes().size(), notes.size(), images, empty, index.missingLinks(),
                 index.missingAssets(), script.getBytes(StandardCharsets.UTF_8).length, defaultNote, warnings);
         return new Assembly(report, new GeneratedSite(script, images));
+    }
+
+    /** Why a build cannot start: a title and one sentence. */
+    private record Refusal(String title, String detail) {
+    }
+
+    private Optional<Refusal> checkInputs() {
+        Optional<String> unset = paths.unsetKey(false);
+        if (unset.isPresent()) {
+            return Optional.of(new Refusal("Required path is not set", "The property " + unset.get() + " is not set."));
+        }
+        return TemplateCheck.shape(site).map(refusal -> new Refusal(refusal.title(), refusal.detail()));
+    }
+
+    private static Optional<Refusal> checkVault(Vault vault) {
+        return switch (vault.status()) {
+            case MISSING -> Optional.of(new Refusal("Vault directory not found",
+                    "The vault directory '" + vault.path() + "' does not exist."));
+            case NOT_A_DIRECTORY -> Optional.of(new Refusal("Vault path is not a directory",
+                    "The vault path '" + vault.path() + "' is not a directory."));
+            default -> Optional.empty();
+        };
+    }
+
+    /** Reads the front matter and the title of every note; links can be resolved only after this pass. */
+    private static void readFrontMatter(List<Note> notes) {
+        for (Note note : notes) {
+            FrontMatter.Parsed parsed = FrontMatter.parse(note.text);
+            note.front = parsed.data();
+            note.body = parsed.body();
+            note.title = titleOf(note);
+        }
+    }
+
+    /** Renders each note into one html block; a first heading that repeats the title is dropped. */
+    private Map<String, NoteEntry> render(List<Note> notes, NoteIndex index) {
+        Map<String, NoteEntry> entries = new LinkedHashMap<>();
+        for (Note note : notes) {
+            List<Block> blocks = new ArrayList<>(MarkdownRenderer.render(note.body, index.forNote(note.id)));
+            if (!blocks.isEmpty() && blocks.get(0).type().equals("h1")
+                    && Js.trim(MarkdownRenderer.stripTags(blocks.get(0).html())).equals(note.title)) {
+                blocks.remove(0);
+            }
+            String html = String.join("\n", blocks.stream().map(Block::html).toList());
+            entries.put(note.id, new NoteEntry(note.title, note.folder,
+                    note.front.get("date") instanceof String date ? date : "", tagsOf(note.front), html));
+        }
+        return entries;
+    }
+
+    /** The configured start note when it exists, otherwise the first note of the tree; a fallback is a warning. */
+    private String defaultNote(Map<String, NoteEntry> entries, List<String> treeOrder, List<String> warnings) {
+        boolean configured = configuredDefaultNote != null && !configuredDefaultNote.isEmpty();
+        if (configured && entries.containsKey(configuredDefaultNote)) {
+            return configuredDefaultNote;
+        }
+        String fallback = treeOrder.isEmpty() ? "" : treeOrder.get(0);
+        if (configured) {
+            warnings.add("Configured start note '" + configuredDefaultNote + "' does not exist; using '"
+                    + fallback + "'");
+        }
+        return fallback;
     }
 
     // ---------- selection ----------

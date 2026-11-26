@@ -202,121 +202,134 @@ final class MarkdownRenderer {
         String[] lines = source.replaceAll("\r\n?", "\n").split("\n", -1);
         List<Block> blocks = new ArrayList<>();
         int i = 0;
-
         while (i < lines.length) {
-            String line = lines[i];
-
-            if (Js.isBlank(line)) {
-                i++;
-                continue;
+            Parsed parsed = nextBlock(lines, i, ctx);
+            if (parsed.block() != null) {
+                blocks.add(parsed.block());
             }
-
-            Matcher fence = FENCE.matcher(line);
-            if (fence.find()) {
-                char closing = fence.group(2).charAt(0);
-                Pattern closeRe = Js.regex("^\\s*" + (closing == '`' ? "`" : "~") + "{3,}\\s*\\z");
-                List<String> code = new ArrayList<>();
-                i++;
-                while (i < lines.length && !closeRe.matcher(lines[i]).find()) {
-                    code.add(lines[i]);
-                    i++;
-                }
-                i++;
-                String lang = Js.truthy(fence.group(3)) ? " class=\"language-" + escapeHtml(fence.group(3)) + "\"" : "";
-                blocks.add(new Block("code", "<pre><code" + lang + ">" + escapeHtml(String.join("\n", code))
-                        + "</code></pre>"));
-                continue;
-            }
-
-            Matcher heading = HEADING.matcher(line);
-            if (heading.find()) {
-                int level = heading.group(1).length();
-                String title = Js.trim(TRAILING_HASHES.matcher(
-                        LEADING_HASHES.matcher(heading.group(2)).replaceFirst("")).replaceFirst(""));
-                i++;
-                if (title.isEmpty()) {
-                    continue;
-                }
-                blocks.add(new Block("h" + level,
-                        "<h" + level + ">" + renderInline(title, ctx) + "</h" + level + ">"));
-                continue;
-            }
-
-            if (isHr(line)) {
-                blocks.add(new Block("hr", "<hr>"));
-                i++;
-                continue;
-            }
-
-            if (line.indexOf('|') != -1 && i + 1 < lines.length && isTableSeparator(lines[i + 1])) {
-                List<String> header = splitRow(line);
-                List<String> align = new ArrayList<>();
-                for (String cell : splitRow(lines[i + 1])) {
-                    align.add(ALIGN_CENTER.matcher(cell).find() ? " style=\"text-align:center\""
-                            : ALIGN_RIGHT.matcher(cell).find() ? " style=\"text-align:right\"" : "");
-                }
-                i += 2;
-                List<List<String>> rows = new ArrayList<>();
-                while (i < lines.length && !Js.isBlank(lines[i]) && lines[i].indexOf('|') != -1) {
-                    rows.add(splitRow(lines[i]));
-                    i++;
-                }
-                StringBuilder table = new StringBuilder("<div class=\"table-wrap\"><table><thead><tr>");
-                for (int index = 0; index < header.size(); index++) {
-                    table.append("<th").append(alignAt(align, index)).append('>')
-                            .append(renderInline(header.get(index), ctx)).append("</th>");
-                }
-                table.append("</tr></thead><tbody>");
-                for (List<String> row : rows) {
-                    table.append("<tr>");
-                    for (int index = 0; index < header.size(); index++) {
-                        String cell = index < row.size() ? row.get(index) : "";
-                        table.append("<td").append(alignAt(align, index)).append('>')
-                                .append(renderInline(cell, ctx)).append("</td>");
-                    }
-                    table.append("</tr>");
-                }
-                blocks.add(new Block("table", table.append("</tbody></table></div>").toString()));
-                continue;
-            }
-
-            if (QUOTE.matcher(line).find()) {
-                List<String> quoted = new ArrayList<>();
-                while (i < lines.length && (QUOTE.matcher(lines[i]).find()
-                        || (!Js.isBlank(lines[i]) && !quoted.isEmpty() && !startsBlock(lines[i])))) {
-                    quoted.add(QUOTE.matcher(lines[i]).replaceFirst(""));
-                    i++;
-                }
-                String inner = joinHtml(renderBlocks(String.join("\n", quoted), ctx), "");
-                blocks.add(new Block("quote", "<blockquote>" + inner + "</blockquote>"));
-                continue;
-            }
-
-            if (ITEM.matcher(line).find()) {
-                ParsedList list = parseList(lines, i, ctx);
-                blocks.add(new Block("list", list.html()));
-                i = list.next();
-                continue;
-            }
-
-            List<String> paragraph = new ArrayList<>();
-            while (i < lines.length && !Js.isBlank(lines[i])
-                    && !HEADING.matcher(lines[i]).find() && !FENCE.matcher(lines[i]).find()
-                    && !isHr(lines[i]) && !ITEM.matcher(lines[i]).find() && !QUOTE.matcher(lines[i]).find()) {
-                paragraph.add(Js.trim(lines[i]));
-                i++;
-            }
-            blocks.add(new Block("p", "<p>" + renderInline(String.join(" ", paragraph), ctx) + "</p>"));
+            i = parsed.next();
         }
-
         return blocks;
+    }
+
+    /** A block read from the lines, or null for lines that give none, and the index of the first unread line. */
+    private record Parsed(Block block, int next) {
+    }
+
+    /** Reads the block that starts at line {@code i}; the order of the checks decides which block wins. */
+    private static Parsed nextBlock(String[] lines, int i, LinkResolver ctx) {
+        String line = lines[i];
+        if (Js.isBlank(line)) {
+            return new Parsed(null, i + 1);
+        }
+        Matcher fence = FENCE.matcher(line);
+        if (fence.find()) {
+            return fencedCode(lines, i, fence);
+        }
+        Matcher heading = HEADING.matcher(line);
+        if (heading.find()) {
+            return heading(heading, i, ctx);
+        }
+        if (isHr(line)) {
+            return new Parsed(new Block("hr", "<hr>"), i + 1);
+        }
+        if (line.indexOf('|') != -1 && i + 1 < lines.length && isTableSeparator(lines[i + 1])) {
+            return table(lines, i, ctx);
+        }
+        if (QUOTE.matcher(line).find()) {
+            return quote(lines, i, ctx);
+        }
+        if (ITEM.matcher(line).find()) {
+            return parseList(lines, i, ctx);
+        }
+        return paragraph(lines, i, ctx);
+    }
+
+    private static Parsed fencedCode(String[] lines, int start, Matcher fence) {
+        char closing = fence.group(2).charAt(0);
+        Pattern closeRe = Js.regex("^\\s*" + (closing == '`' ? "`" : "~") + "{3,}\\s*\\z");
+        List<String> code = new ArrayList<>();
+        int i = start + 1;
+        while (i < lines.length && !closeRe.matcher(lines[i]).find()) {
+            code.add(lines[i]);
+            i++;
+        }
+        String lang = Js.truthy(fence.group(3)) ? " class=\"language-" + escapeHtml(fence.group(3)) + "\"" : "";
+        return new Parsed(new Block("code", "<pre><code" + lang + ">" + escapeHtml(String.join("\n", code))
+                + "</code></pre>"), i + 1);
+    }
+
+    /** A heading whose text is empty after the hashes are removed gives no block. */
+    private static Parsed heading(Matcher heading, int i, LinkResolver ctx) {
+        int level = heading.group(1).length();
+        String title = Js.trim(TRAILING_HASHES.matcher(
+                LEADING_HASHES.matcher(heading.group(2)).replaceFirst("")).replaceFirst(""));
+        if (title.isEmpty()) {
+            return new Parsed(null, i + 1);
+        }
+        return new Parsed(new Block("h" + level, "<h" + level + ">" + renderInline(title, ctx) + "</h" + level + ">"),
+                i + 1);
+    }
+
+    private static Parsed table(String[] lines, int start, LinkResolver ctx) {
+        List<String> header = splitRow(lines[start]);
+        List<String> align = new ArrayList<>();
+        for (String cell : splitRow(lines[start + 1])) {
+            align.add(ALIGN_CENTER.matcher(cell).find() ? " style=\"text-align:center\""
+                    : ALIGN_RIGHT.matcher(cell).find() ? " style=\"text-align:right\"" : "");
+        }
+        int i = start + 2;
+        List<List<String>> rows = new ArrayList<>();
+        while (i < lines.length && !Js.isBlank(lines[i]) && lines[i].indexOf('|') != -1) {
+            rows.add(splitRow(lines[i]));
+            i++;
+        }
+        StringBuilder table = new StringBuilder("<div class=\"table-wrap\"><table><thead><tr>");
+        for (int index = 0; index < header.size(); index++) {
+            table.append("<th").append(alignAt(align, index)).append('>')
+                    .append(renderInline(header.get(index), ctx)).append("</th>");
+        }
+        table.append("</tr></thead><tbody>");
+        for (List<String> row : rows) {
+            table.append("<tr>");
+            for (int index = 0; index < header.size(); index++) {
+                String cell = index < row.size() ? row.get(index) : "";
+                table.append("<td").append(alignAt(align, index)).append('>')
+                        .append(renderInline(cell, ctx)).append("</td>");
+            }
+            table.append("</tr>");
+        }
+        return new Parsed(new Block("table", table.append("</tbody></table></div>").toString()), i);
+    }
+
+    /** A quote takes its marked lines and the unmarked lines that continue it, and renders them as blocks. */
+    private static Parsed quote(String[] lines, int start, LinkResolver ctx) {
+        List<String> quoted = new ArrayList<>();
+        int i = start;
+        while (i < lines.length && (QUOTE.matcher(lines[i]).find()
+                || (!Js.isBlank(lines[i]) && !quoted.isEmpty() && !startsBlock(lines[i])))) {
+            quoted.add(QUOTE.matcher(lines[i]).replaceFirst(""));
+            i++;
+        }
+        String inner = joinHtml(renderBlocks(String.join("\n", quoted), ctx), "");
+        return new Parsed(new Block("quote", "<blockquote>" + inner + "</blockquote>"), i);
+    }
+
+    /** A paragraph runs until a blank line or a line that starts another block; its lines join with spaces. */
+    private static Parsed paragraph(String[] lines, int start, LinkResolver ctx) {
+        List<String> paragraph = new ArrayList<>();
+        int i = start;
+        while (i < lines.length && !Js.isBlank(lines[i])
+                && !HEADING.matcher(lines[i]).find() && !FENCE.matcher(lines[i]).find()
+                && !isHr(lines[i]) && !ITEM.matcher(lines[i]).find() && !QUOTE.matcher(lines[i]).find()) {
+            paragraph.add(Js.trim(lines[i]));
+            i++;
+        }
+        return new Parsed(new Block("p", "<p>" + renderInline(String.join(" ", paragraph), ctx) + "</p>"), i);
     }
 
     private static String alignAt(List<String> align, int index) {
         return index < align.size() ? align.get(index) : "";
-    }
-
-    private record ParsedList(String html, int next) {
     }
 
     /** Removes one leading "&lt;p&gt;" and one trailing "&lt;/p&gt;". */
@@ -325,7 +338,7 @@ final class MarkdownRenderer {
         return out.endsWith("</p>") ? out.substring(0, out.length() - 4) : out;
     }
 
-    private static ParsedList parseList(String[] lines, int start, LinkResolver ctx) {
+    private static Parsed parseList(String[] lines, int start, LinkResolver ctx) {
         Matcher first = ITEM.matcher(lines[start]);
         first.find();
         int baseIndent = indentOf(lines[start]);
@@ -390,6 +403,6 @@ final class MarkdownRenderer {
         }
 
         String tag = ordered ? "ol" : "ul";
-        return new ParsedList("<" + tag + ">" + body + "</" + tag + ">", i);
+        return new Parsed(new Block("list", "<" + tag + ">" + body + "</" + tag + ">"), i);
     }
 }

@@ -1,7 +1,9 @@
 package io.github.mbero.mb2e.adapter.in.web;
 
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.regex.Pattern;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.CacheControl;
@@ -36,7 +38,7 @@ public final class DashboardFiles {
 
     public RouterFunction<ServerResponse> routes() {
         return RouterFunctions.route()
-                .GET("/dashboard", request -> ServerResponse.permanentRedirect(java.net.URI.create(PREFIX)).build())
+                .GET("/dashboard", request -> ServerResponse.permanentRedirect(URI.create(PREFIX)).build())
                 .GET(PREFIX + "**", this::serve)
                 .build();
     }
@@ -67,8 +69,8 @@ public final class DashboardFiles {
             return NO_CACHE;
         }
         return HASHED.matcher(name).matches()
-                ? CacheControl.maxAge(java.time.Duration.ofDays(365)).cachePublic().immutable()
-                : CacheControl.maxAge(java.time.Duration.ofHours(1));
+                ? CacheControl.maxAge(Duration.ofDays(365)).cachePublic().immutable()
+                : CacheControl.maxAge(Duration.ofHours(1));
     }
 
     private static ServerResponse send(Path file, CacheControl cache) {

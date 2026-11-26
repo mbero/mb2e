@@ -3,7 +3,9 @@ package io.github.mbero.mb2e;
 import io.github.mbero.mb2e.infrastructure.config.ServerProperties;
 import java.nio.file.Path;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -198,7 +200,7 @@ final class ServerEnvironment {
     private static String identity(String url) {
         Matcher matcher = REPOSITORY.matcher(url);
         matcher.matches();
-        return (matcher.group(1) + "/" + matcher.group(2)).toLowerCase(java.util.Locale.ROOT);
+        return (matcher.group(1) + "/" + matcher.group(2)).toLowerCase(Locale.ROOT);
     }
 
     private String branch(String name) {
@@ -267,11 +269,11 @@ final class ServerEnvironment {
     }
 
     /** Returns the commit message when it is set; the default lives in {@code Mb2eProperties} only. */
-    private java.util.Optional<String> commitMessage() {
+    private Optional<String> commitMessage() {
         String value = raw("MB2E_COMMIT_MESSAGE");
         if (value != null && (value.contains("\n") || value.contains("\r"))) {
             throw refused("MB2E_COMMIT_MESSAGE must be one line.");
         }
-        return java.util.Optional.ofNullable(value);
+        return Optional.ofNullable(value);
     }
 }

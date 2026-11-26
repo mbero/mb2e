@@ -1,6 +1,7 @@
 package io.github.mbero.mb2e.domain.service;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -67,6 +68,6 @@ final class FrontMatter {
                 data.put(match.group(1), parseValue(match.group(2)));
             }
         }
-        return new Parsed(data, String.join("\n", java.util.Arrays.asList(lines).subList(end + 1, lines.length)));
+        return new Parsed(data, String.join("\n", Arrays.asList(lines).subList(end + 1, lines.length)));
     }
 }

@@ -6,6 +6,8 @@ import io.github.mbero.mb2e.domain.model.PublishReport;
 import io.github.mbero.mb2e.domain.model.RunReport;
 import io.github.mbero.mb2e.domain.model.StepResult;
 import java.util.List;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /** Serializes reports as single JSON objects in which every field is always present. */
 final class ReportJson {
@@ -80,12 +82,12 @@ final class ReportJson {
                 + ",\"publish\":" + section(report.publish(), r -> publish(r, false)) + "}";
     }
 
-    private static <T> String section(StepResult<T> step, java.util.function.Function<T, String> document) {
+    private static <T> String section(StepResult<T> step, Function<T, String> document) {
         return step.report() == null ? "{\"outcome\":" + JsonText.quote(step.outcome()) + "}"
                 : document.apply(step.report());
     }
 
     private static String array(List<String> values) {
-        return values.stream().map(JsonText::quote).collect(java.util.stream.Collectors.joining(",", "[", "]"));
+        return values.stream().map(JsonText::quote).collect(Collectors.joining(",", "[", "]"));
     }
 }
