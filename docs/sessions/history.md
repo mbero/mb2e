@@ -34,6 +34,96 @@ Procedure: [`.agents/procedures/session-handoff.md`](../../.agents/procedures/se
 
 <!-- NEW ENTRIES GO DIRECTLY BELOW THIS LINE -->
 
+### Session 7 — 2026-11-25
+
+**Goal:** Run the server mode locally and check that it deploys a new `blog-ready` note.
+
+**Done:**
+
+- Local profile: `.env.local` (git-ignored; source: the private notes repository, target: the Pages repository, random webhook secret, poll 60 s, no start-up deploy, port 8080).
+- `scripts/serve-local.sh`: loads `.env.local` (a shell variable wins), token from `gh auth token`, author from `git config`, workspace `~/.cache/mb2e/workspace`, builds the jar when missing.
+- `scripts/send-test-webhook.sh`: signed `push` of the newest source commit (`gh api`), or `--ping`.
+- `scripts/local-server.env.example`: template with placeholders. `.gitignore`: `.env.local`.
+- Check on port 18090 with poll 0: `/healthz` up, `--ping` → `200 pong`, wrong secret → `401`, no token or secret in the logs, nothing deployed.
+
+**Key decisions:**
+
+- GitHub cannot reach localhost: the local test uses the poll or the test webhook script, no tunnel → this entry.
+
+**Output files:**
+
+- `scripts/serve-local.sh`, `scripts/send-test-webhook.sh`, `scripts/local-server.env.example`.
+
+**Key files and classes for later work:**
+
+| Path | Why it matters |
+|---|---|
+| `.env.local` | Local settings; never commit it |
+
+**Dead ends — do not repeat:**
+
+- none
+
+**Open questions:**
+
+| Question | Who or what can answer it |
+|---|---|
+| Run the real test? It publishes to the live site | The owner |
+| The local clone of the notes has uncommitted changes; the server builds only from the pushed source branch | The owner, before the first deploy |
+| Replace the broad `gh` token (scopes `repo`, `workflow`, ...) with two fine-grained tokens (`MB2E_SOURCE_TOKEN`, `MB2E_TARGET_TOKEN`)? | The owner |
+| Commit the scripts to PR #4 (`feature/service-mode`)? | The owner |
+
+**Not done:**
+
+- The real end-to-end test against GitHub (new note → deploy) has not run.
+- The scripts, the `.gitignore` line and this entry are not committed; the working copy is on `feature/repo-memory-knowledge-base`. Do not switch to `feature/service-mode` before PR #5 is merged (see Session 6).
+
+### Session 6 — 2026-11-25
+
+**Goal:** Publish the repo-memory knowledge base of mb2e and enable fitting profiles.
+
+**Done:**
+
+- `repo-memory/bootstrap/sync.sh` run: template `2.0.0` already current; only `docs/decisions/README.md` differs (project ADR rows, expected).
+- Profiles enabled in `AGENTS.md` section 9: `profiles/github-issues.md` (new), `profiles/container-service.md` (new), `profiles/obsidian.md` (from the template). Board ids moved to `docs/context/ecosystem.md`, section "Backlog and project board".
+- Global rule `[R-TEST-03]` (Mockito only at boundaries) in the owner's global agent rules; mb2e exception `[P-TEST-01]` in `docs/qa/project-rules.md`.
+- Backlog issue https://github.com/mbero/service-spec-harness/issues/12 (dashboard UI), board status Backlog.
+- Sensitive-data scan of the 54 knowledge-base files: no secret, absolute path, e-mail, personal name or operator URL.
+- Branch `feature/repo-memory-knowledge-base` from `feature/service-mode`: `ba8b290` (knowledge base, `.gitignore` keeps only `.claude/*` except `.claude/commands/`), `0936c4c` (ADR sources cite code, not the untracked plan). PR https://github.com/mbero/mb2e/pull/5, base `feature/service-mode`; checks `check` and `build` pass.
+
+**Key decisions:**
+
+- PR #5 targets `feature/service-mode` because the documents cite server-mode files → PR #5 description.
+- The plan file stays untracked; no document may list it under `sources:` (the CI check fails) → this entry.
+
+**Output files:**
+
+- `profiles/github-issues.md`, `profiles/container-service.md`, `docs/qa/project-rules.md`.
+
+**Key files and classes for later work:**
+
+| Path | Why it matters |
+|---|---|
+| `.gitignore` | On `feature/service-mode` the knowledge base is still ignored; on the new branch it is tracked |
+| `.github/workflows/knowledge-base.yml` | Runs `bootstrap/check.sh` on PRs that touch the knowledge base |
+
+**Dead ends — do not repeat:**
+
+- A `sources:` entry that points to an untracked file passes locally and fails in CI. Test with the file moved away.
+
+**Open questions:**
+
+| Question | Who or what can answer it |
+|---|---|
+| Merge PR #4, then PR #5? | The owner |
+| Upstream the two new profiles to repo-memory? | The owner |
+| Move `actions/setup-java` from `@v4` (deprecated) to `@v5` in `.github/workflows/build.yml`? | The owner |
+
+**Not done:**
+
+- **Warning:** a switch from this branch to `feature/service-mode` deletes the tracked knowledge-base files from the working tree, because that branch ignores them and does not track them. Stay on this branch, or merge PR #5 first. The files stay safe in commit `0936c4c`.
+- This entry is not committed (handoff procedure, step 11).
+
 ### Session 5 — 2026-11-25
 
 **Goal:** Finish the "mb2e as service" plan (Phases 3–5, issues #8–#10), open the merge request, review it, and fix the findings.
@@ -54,17 +144,17 @@ Procedure: [`.agents/procedures/session-handoff.md`](../../.agents/procedures/se
 **Key decisions:**
 
 - Mockito-free tests in mb2e → `docs/qa/project-rules.md` `[P-TEST-01]`, `docs/context/conventions.md`, `pom.xml`.
-- Global rule: Mockito only at architecture boundaries → `~/.claude/rules/global-rules.md` `[R-TEST-03]` (mb2e overrides it).
+- Global rule: Mockito only at architecture boundaries → the owner's global agent rules (mb2e overrides it).
 - Spring Shell separation: fallback variant (runners off by property) → ADR 0002.
 - Endpoints are plain classes registered by `ServerConfig`; `GET /webhook/github` now answers `404`, not `405` → not recorded as an ADR.
 - Kept deviations from the plan: only `[rejected]` pushes are retried; `serve` routed before the argument guard; ADR file names differ from plan §5.1 → this entry.
 
 **Owner decisions (do not ask again):**
 
-- After every phase: all tests, CLI check, tick the issue boxes, board item In review after push, never Done (memory `github-issue-updates-per-phase`).
-- Commits: `type: subject`, no JIRA key in this repository, no `Co-Authored-By` / `Claude-Session` (memory `no-trailers-in-commit-messages`).
+- After every phase: all tests, CLI check, tick the issue boxes, board item In review after push, never Done.
+- Commits: `type: subject`, no JIRA key in this repository, no `Co-Authored-By` / `Claude-Session`.
 - Never commit `AS_A_SERVICE_ARCHITECTURE_PLAN.md`, `GLOSSARY.md`, `src/main/resources/template/mbs-blog/README.md`.
-- Save a handoff entry when the context nears 90% (memory `save-session-state-near-context-limit`).
+- Save a handoff entry when the context nears 90%.
 - Session-only, not carried over: commit and push without asking.
 
 **Output files:**

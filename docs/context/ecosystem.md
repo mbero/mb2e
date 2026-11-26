@@ -41,8 +41,7 @@ Without this file, an agent searches this repository for an answer that is not h
 |---|---|
 | Issue repository | https://github.com/mbero/service-spec-harness (issues #5–#10: "mb2e as service"; #12: dashboard UI) |
 | Project board | GitHub project 2 of the owner `mbero`; its id: `gh project view 2 --owner mbero --format json --jq .id` |
-| Status field | `PVTSSF_lAHOANUm6M4Bqhdbzho4PcE` |
-| Status options | Backlog `f75ad846`, Ready `61e4505c`, In progress `47fc9ee4`, In review `df73e18b`, Done `98236657` |
+| Status field and options | Backlog, Ready, In progress, In review, Done; ids: `gh project field-list 2 --owner mbero --format json` |
 
 Set a status: `gh project item-edit --id <item> --project-id <id> --field-id <field> --single-select-option-id <option>`.
 Find an item id: `gh project item-list 2 --owner mbero --format json`. Rules: `profiles/github-issues.md`.
