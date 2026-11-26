@@ -17,7 +17,7 @@ Open a document only when its title matches the question.
 | Document | Title | Type | Status | Updated |
 |---|---|---|---|---|
 | [`context/architecture.md`](context/architecture.md) | Architecture | context | draft | 2026-11-25 |
-| [`context/conventions.md`](context/conventions.md) | Development conventions | context | draft | 2026-11-25 |
+| [`context/conventions.md`](context/conventions.md) | Development conventions | context | draft | 2026-11-26 |
 | [`context/domain.md`](context/domain.md) | Business domain | context | draft | 2026-11-13 |
 | [`context/ecosystem.md`](context/ecosystem.md) | Ecosystem context | context | draft | 2026-11-25 |
 | [`context/glossary.md`](context/glossary.md) | Glossary | context | draft | 2026-11-25 |

@@ -1,0 +1,38 @@
+:host {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding: 0 9px;
+  border-radius: 4px;
+  font: 600 12px var(--font-mono);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+:host(.lg) {
+  height: 30px;
+  font-size: 13px;
+  text-transform: uppercase;
+}
+:host(.deployed) {
+  background: var(--color-code-bg);
+  color: var(--color-code-fg);
+  border: 1px solid var(--color-code-bg);
+}
+:host(.up_to_date) {
+  background: var(--color-bg);
+  color: var(--color-muted);
+  border: 1px solid var(--color-badge-line);
+  font-weight: 500;
+}
+:host(.refused) {
+  background: var(--color-bg);
+  color: var(--color-text);
+  border: 1px dashed var(--color-text);
+}
+:host(.failed) {
+  background: var(--color-code-bg);
+  color: var(--color-code-fg);
+  border: 2px solid var(--color-fg);
+  font-weight: 700;
+}

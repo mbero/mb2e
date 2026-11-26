@@ -1,0 +1,15 @@
+<div role="alert" class="notice">
+  @if (kind() === 'session') {
+    <p class="title">Your session has expired</p>
+    <p>Sign in again to keep watching your deployments. You'll come back to this page.</p>
+    <a class="button" href="/oauth2/authorization/github">Sign in with GitHub</a>
+  } @else {
+    <p class="title">Can't reach the service</p>
+    <p>
+      @if (hasData()) {
+        The data below may be out of date.
+      }
+      Trying again in 15 s.
+    </p>
+  }
+</div>

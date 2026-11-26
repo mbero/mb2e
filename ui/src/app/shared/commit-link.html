@@ -1,0 +1,5 @@
+@if (sha(); as id) {
+  <a [href]="url()">{{ id.slice(0, 7) }}</a>
+} @else {
+  <span class="empty">{{ emptyLabel() }}</span>
+}

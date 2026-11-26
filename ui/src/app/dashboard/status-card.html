@@ -1,0 +1,60 @@
+<section class="section" aria-labelledby="service-heading">
+  <h2 id="service-heading" class="label">Service</h2>
+  <dl>
+    <div>
+      <dt class="label">State</dt>
+      <dd class="state">
+        <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true">
+          <circle
+            cx="5"
+            cy="5"
+            r="4"
+            [attr.fill]="status().state === 'idle' ? 'none' : 'currentColor'"
+            stroke="currentColor"
+            stroke-width="2"
+          />
+        </svg>
+        {{ stateLabel() }}
+      </dd>
+    </div>
+    <div>
+      <dt class="label">Uptime</dt>
+      <dd class="strong">{{ up() }}</dd>
+    </div>
+    <div>
+      <dt class="label">Source</dt>
+      <dd>
+        <svg
+          width="12"
+          height="12"
+          viewBox="0 0 16 16"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.6"
+          role="img"
+          aria-label="Private"
+        >
+          <rect x="3" y="7" width="10" height="7" rx="1" />
+          <path d="M5 7V5a3 3 0 0 1 6 0v2" />
+        </svg>
+        <a [href]="'https://github.com/' + status().sourceRepo">{{ status().sourceRepo }}</a>
+      </dd>
+    </div>
+    <div>
+      <dt class="label">Target</dt>
+      <dd>
+        <a [href]="'https://github.com/' + status().targetRepo">{{ status().targetRepo }}</a>
+      </dd>
+    </div>
+    <div>
+      <dt class="label">Site</dt>
+      <dd>
+        @if (status().siteUrl; as site) {
+          <a [href]="site">{{ host() }} ↗</a>
+        } @else {
+          —
+        }
+      </dd>
+    </div>
+  </dl>
+</section>

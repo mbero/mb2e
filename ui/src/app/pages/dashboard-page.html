@@ -1,0 +1,54 @@
+<mb-app-shell
+  [login]="session.login()"
+  [siteUrl]="store.status()?.siteUrl ?? null"
+  [sourceRepo]="store.status()?.sourceRepo ?? null"
+  [targetRepo]="store.status()?.targetRepo ?? null"
+  (signOut)="signOut()"
+>
+  <div class="title-row">
+    <div>
+      <div class="label dark">Dashboard</div>
+      <h1>Deployments</h1>
+    </div>
+    @if (store.lastUpdated(); as updated) {
+      <mb-refresh-indicator
+        [lastUpdated]="updated"
+        [now]="store.now()"
+        [intervalSec]="refresh"
+        [stale]="store.failing()"
+      />
+    }
+  </div>
+  @if (session.expired()) {
+    <mb-error-notice kind="session" />
+  } @else if (store.failing()) {
+    <mb-error-notice kind="api" [hasData]="store.deployments() !== null" />
+  }
+  <div [class.stale]="store.failing() || session.expired()" [attr.aria-busy]="store.loading()">
+    @if (store.loading()) {
+      <mb-loading-skeleton />
+    }
+    @if (store.status(); as status) {
+      <mb-status-card [status]="status" />
+      @if (store.latest(); as latest) {
+        <mb-last-deployment
+          [deployment]="latest"
+          [previous]="previousDeployed()"
+          [sourceRepo]="status.sourceRepo"
+          [targetRepo]="status.targetRepo"
+          [maxAttempts]="status.maxAttempts"
+          [now]="store.now()"
+        />
+        <mb-deployment-table
+          [deployments]="store.deployments() ?? []"
+          [sourceRepo]="status.sourceRepo"
+          [targetRepo]="status.targetRepo"
+          [maxAttempts]="status.maxAttempts"
+          [now]="store.now()"
+        />
+      } @else {
+        <mb-empty-state [sourceRepo]="status.sourceRepo" />
+      }
+    }
+  </div>
+</mb-app-shell>

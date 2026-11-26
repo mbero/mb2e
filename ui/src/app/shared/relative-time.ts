@@ -5,12 +5,8 @@ import { absolute, relative } from '../core/format';
 @Component({
   selector: 'mb-relative-time',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `<time [attr.datetime]="value()">{{ local() }}</time
-    >@if (inline()) {<span> · {{ ago() }}</span>} @else {<div class="ago">{{ ago() }}</div>}`,
-  styles: `
-    time { color: var(--color-text); white-space: nowrap; }
-    .ago { color: var(--color-muted); font-size: 12px; margin-top: 2px; }
-  `,
+  templateUrl: './relative-time.html',
+  styleUrl: './relative-time.css',
 })
 export class RelativeTime {
   readonly value = input.required<string>();

@@ -1,0 +1,116 @@
+<section class="section" aria-labelledby="recent-heading">
+  <div class="heading">
+    <h2 id="recent-heading" class="label">Recent deployments</h2>
+    <span class="caption"
+      >{{ deployments().length }} shown · newest first · times in your time zone</span
+    >
+  </div>
+  <div class="wide">
+    <table>
+      <thead>
+        <tr>
+          <th class="toggle"><span class="visually-hidden">Details</span></th>
+          <th>Finished</th>
+          <th>Outcome</th>
+          <th>Trigger</th>
+          <th>Attempts</th>
+          <th>Source</th>
+          <th>Target</th>
+        </tr>
+      </thead>
+      @for (d of deployments(); track d.finishedAt) {
+        <tbody [class.failed]="d.outcome === 'failed'">
+          <tr>
+            <td class="toggle">
+              @if (d.cause) {
+                <button
+                  type="button"
+                  class="expand"
+                  [attr.aria-expanded]="isOpen(d)"
+                  [attr.aria-controls]="'cause-' + $index"
+                  [attr.aria-label]="(isOpen(d) ? 'Hide cause for ' : 'Show cause for ') + local(d)"
+                  (click)="toggle(d)"
+                >
+                  <svg
+                    width="12"
+                    height="12"
+                    viewBox="0 0 12 12"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    aria-hidden="true"
+                    [class.open]="isOpen(d)"
+                  >
+                    <path d="m4.5 2.5 3.5 3.5-3.5 3.5" />
+                  </svg>
+                </button>
+              }
+            </td>
+            <td><mb-relative-time [value]="d.finishedAt" [now]="now()" /></td>
+            <td><mb-outcome-badge [outcome]="d.outcome" /></td>
+            <td>{{ d.trigger }}</td>
+            <td [class.retried]="d.attempts > 1">{{ attemptText(d) }}</td>
+            <td><mb-commit-link [repo]="sourceRepo()" [sha]="d.sourceCommit" /></td>
+            <td>
+              <mb-commit-link
+                [repo]="targetRepo()"
+                [sha]="d.targetCommit"
+                emptyLabel="— no change"
+              />
+            </td>
+          </tr>
+          @if (isOpen(d)) {
+            <tr [id]="'cause-' + $index" class="cause-row">
+              <td colspan="7">
+                <div class="label">Cause</div>
+                <pre class="cause">{{ d.cause }}</pre>
+              </td>
+            </tr>
+          }
+        </tbody>
+      }
+    </table>
+  </div>
+  <ul class="narrow">
+    @for (d of deployments(); track d.finishedAt) {
+      <li [class.failed]="d.outcome === 'failed'">
+        <div class="row">
+          <mb-outcome-badge [outcome]="d.outcome" />
+          <mb-relative-time [value]="d.finishedAt" [now]="now()" />
+        </div>
+        <dl>
+          <div>
+            <dt>Trigger</dt>
+            <dd>{{ d.trigger }}</dd>
+          </div>
+          <div>
+            <dt>Attempts</dt>
+            <dd [class.retried]="d.attempts > 1">{{ attemptText(d) }}</dd>
+          </div>
+          <div>
+            <dt>Source</dt>
+            <dd><mb-commit-link [repo]="sourceRepo()" [sha]="d.sourceCommit" /></dd>
+          </div>
+          <div>
+            <dt>Target</dt>
+            <dd>
+              <mb-commit-link
+                [repo]="targetRepo()"
+                [sha]="d.targetCommit"
+                emptyLabel="— no change"
+              />
+            </dd>
+          </div>
+        </dl>
+        @if (d.cause) {
+          <button type="button" class="show" [attr.aria-expanded]="isOpen(d)" (click)="toggle(d)">
+            {{ isOpen(d) ? 'Hide cause' : 'Show cause' }}
+          </button>
+          @if (isOpen(d)) {
+            <pre class="cause">{{ d.cause }}</pre>
+          }
+        }
+      </li>
+    }
+  </ul>
+</section>

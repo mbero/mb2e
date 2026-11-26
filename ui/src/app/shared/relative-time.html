@@ -1,0 +1,6 @@
+<time [attr.datetime]="value()">{{ local() }}</time>
+@if (inline()) {
+  <span> · {{ ago() }}</span>
+} @else {
+  <div class="ago">{{ ago() }}</div>
+}

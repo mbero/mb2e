@@ -5,6 +5,7 @@ status: current
 updated: 2026-11-26
 sources:
   - pom.xml
+  - ui/src/app/app.ts
   - src/main/java/io/github/mbero/mb2e/adapter/in/web/DashboardApiController.java
 tags: [qa, rules]
 ---
@@ -27,3 +28,8 @@ tags: [qa, rules]
 - Rule: text that comes from a git or file error and goes into an HTTP answer replaces the workspace and template paths with `<local path>`.
 - Why: a path reveals the server layout; the operator finds the full text in the log.
 - Verification: test — `DashboardApiControllerTest.deploymentsComeNewestFirstWithUtcTimesAndNullsForMissingCommits`.
+
+## [P-UI-01] Angular templates and styles in separate files
+- Rule: each Angular component in `ui/` keeps its HTML in `<name>.html` and its CSS in `<name>.css`, beside `<name>.ts`, linked with `templateUrl` and `styleUrl`. One component per file. No inline `template:` or `styles:`.
+- Why: the owner asked for it on 2026-11-26. Markup and CSS read better, and get editor and Prettier support, in their own files.
+- Verification: manual — `grep -rnE "^\s+(template|styles):" ui/src/app` returns nothing.

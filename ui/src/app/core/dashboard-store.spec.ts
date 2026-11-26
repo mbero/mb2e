@@ -14,15 +14,22 @@ describe('DashboardStore', () => {
 
   const answer = () => {
     http.expectOne('/api/status').flush(SAMPLE_STATUS);
-    http.expectOne((request) => request.url === '/api/deployments' && request.params.get('limit') === '50')
+    http
+      .expectOne(
+        (request) => request.url === '/api/deployments' && request.params.get('limit') === '50',
+      )
       .flush(SAMPLE_DEPLOYMENTS);
   };
 
   beforeEach(() => {
     vi.useFakeTimers();
     TestBed.configureTestingModule({
-      providers: [DashboardStore, provideRouter([]), provideHttpClient(withInterceptors([sessionInterceptor])),
-        provideHttpClientTesting()],
+      providers: [
+        DashboardStore,
+        provideRouter([]),
+        provideHttpClient(withInterceptors([sessionInterceptor])),
+        provideHttpClientTesting(),
+      ],
     });
     store = TestBed.inject(DashboardStore);
     http = TestBed.inject(HttpTestingController);
@@ -60,7 +67,9 @@ describe('DashboardStore', () => {
   it('stops polling once the session has ended', () => {
     store.start();
     vi.advanceTimersByTime(0);
-    http.expectOne('/api/status').flush({ error: 'Sign in first.' }, { status: 401, statusText: 'Unauthorized' });
+    http
+      .expectOne('/api/status')
+      .flush({ error: 'Sign in first.' }, { status: 401, statusText: 'Unauthorized' });
     expect(TestBed.inject(Session).expired()).toBe(true);
     vi.advanceTimersByTime(REFRESH_SECONDS * 1000 * 3);
     http.expectNone('/api/status');

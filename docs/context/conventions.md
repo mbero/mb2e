@@ -2,7 +2,7 @@
 title: Development conventions
 type: context
 status: draft
-updated: 2026-11-25
+updated: 2026-11-26
 sources:
   - pom.xml
   - src/main/java/io/github/mbero/mb2e/domain/service/BuildService.java
@@ -15,6 +15,7 @@ sources:
   - src/test/java/io/github/mbero/mb2e/Mb2eExitCodeTest.java
   - src/test/java/io/github/mbero/mb2e/domain/service/BuildServiceTest.java
   - src/test/java/io/github/mbero/mb2e/Mb2eApplicationTest.java
+  - ui/.prettierrc
 tags: [conventions, code]
 ---
 
@@ -86,7 +87,8 @@ See [`architecture.md`](architecture.md) for the evidence.
 - Indentation is four spaces. The longest line in `src/main/java` has 124 characters (measured 2026-11-13).
 - Each class has a Javadoc block. The first sentence is a summary in the third person. A block has at most five lines.
 - A comment explains **why**, never **what**.
-- No lint or format tool exists. Match the formatting of the surrounding file.
+- No lint or format tool exists for the Java code. Match the formatting of the surrounding file.
+- Dashboard UI (`ui/`): one standalone component per file, `OnPush`, signals. The template and the CSS live in `<name>.html` and `<name>.css` beside `<name>.ts` (`docs/qa/project-rules.md` `[P-UI-01]`). Format with `npx prettier --write` in `ui/` (`ui/.prettierrc`, 100 columns).
 
 ## Tests
 

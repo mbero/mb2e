@@ -30,7 +30,10 @@ describe('DeploymentTable', () => {
     button.click();
     await fixture.whenStable();
     expect(element.querySelector('table .cause-row pre')?.textContent).toContain('token expired');
-    fixture.componentRef.setInput('deployments', SAMPLE_DEPLOYMENTS.map((d) => ({ ...d })));
+    fixture.componentRef.setInput(
+      'deployments',
+      SAMPLE_DEPLOYMENTS.map((d) => ({ ...d })),
+    );
     await fixture.whenStable();
     expect(element.querySelector('table .expand')?.getAttribute('aria-expanded')).toBe('true');
     expect(element.querySelector('table .cause-row')).not.toBeNull();
@@ -38,7 +41,9 @@ describe('DeploymentTable', () => {
 
   it('shows a cause as text, never as markup', async () => {
     const fixture = TestBed.createComponent(DeploymentTable);
-    fixture.componentRef.setInput('deployments', [{ ...SAMPLE_DEPLOYMENTS[0], cause: '<img src=x onerror=alert(1)>' }]);
+    fixture.componentRef.setInput('deployments', [
+      { ...SAMPLE_DEPLOYMENTS[0], cause: '<img src=x onerror=alert(1)>' },
+    ]);
     fixture.componentRef.setInput('sourceRepo', 'a/b');
     fixture.componentRef.setInput('targetRepo', 'a/c');
     fixture.componentRef.setInput('maxAttempts', 3);

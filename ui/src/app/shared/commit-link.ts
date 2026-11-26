@@ -5,14 +5,8 @@ import { commitUrl } from '../core/format';
 @Component({
   selector: 'mb-commit-link',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `
-    @if (sha(); as id) {
-      <a [href]="url()">{{ id.slice(0, 7) }}</a>
-    } @else {
-      <span class="empty">{{ emptyLabel() }}</span>
-    }
-  `,
-  styles: `.empty { color: var(--color-muted); }`,
+  templateUrl: './commit-link.html',
+  styleUrl: './commit-link.css',
 })
 export class CommitLink {
   readonly repo = input.required<string>();

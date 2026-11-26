@@ -1,0 +1,53 @@
+<section class="section" aria-labelledby="last-heading">
+  <h2 id="last-heading" class="label">Last deployment</h2>
+  <div class="box" [class.alarm]="d().outcome === 'failed'">
+    <div class="head">
+      <mb-outcome-badge [outcome]="d().outcome" size="lg" />
+      <p class="headline">{{ headline() }}</p>
+    </div>
+    <p class="sentence">
+      @switch (d().outcome) {
+        @case ('deployed') {
+          Commit <mb-commit-link [repo]="sourceRepo()" [sha]="d().sourceCommit" /> was built and
+          pushed to <strong>{{ targetRepo() }}</strong> as
+          <mb-commit-link [repo]="targetRepo()" [sha]="d().targetCommit" />. GitHub Pages usually
+          publishes within a minute.
+        }
+        @case ('up_to_date') {
+          Commit <mb-commit-link [repo]="sourceRepo()" [sha]="d().sourceCommit" /> built the same
+          site as before, so there was nothing to push. This is normal.
+        }
+        @case ('refused') {
+          Commit <mb-commit-link [repo]="sourceRepo()" [sha]="d().sourceCommit" /> was not
+          published. The site stays as it is.
+        }
+        @case ('failed') {
+          Commit <mb-commit-link [repo]="sourceRepo()" [sha]="d().sourceCommit" /> was built, but
+          the push to <strong>{{ targetRepo() }}</strong> failed.
+          @if (previous(); as p) {
+            The site still shows the deployment from {{ previousTime() }} (<mb-commit-link
+              [repo]="targetRepo()"
+              [sha]="p.targetCommit"
+            />).
+          }
+          The next push or poll will try again.
+        }
+      }
+    </p>
+    @if (d().cause; as cause) {
+      <div class="label cause-label">Cause</div>
+      <pre class="cause">{{ cause }}</pre>
+    }
+    <p class="meta">
+      <span
+        >Finished <mb-relative-time [value]="d().finishedAt" [now]="now()" [inline]="true"
+      /></span>
+      <span
+        >Trigger <b>{{ d().trigger }}</b></span
+      >
+      <span
+        >Attempts <b>{{ attemptText() }}</b></span
+      >
+    </p>
+  </div>
+</section>

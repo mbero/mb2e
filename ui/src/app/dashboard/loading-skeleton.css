@@ -1,0 +1,12 @@
+.block {
+  margin-top: 32px;
+  height: 88px;
+  background: var(--color-panel);
+  border-radius: 4px;
+}
+.short {
+  height: 72px;
+}
+.tall {
+  height: 180px;
+}

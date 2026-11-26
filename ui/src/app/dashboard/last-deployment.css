@@ -1,0 +1,50 @@
+.box {
+  border: 1px solid var(--color-line);
+  border-radius: 5px;
+  padding: 24px 26px;
+}
+.box.alarm {
+  border: 2px solid var(--color-fg);
+}
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+}
+.headline {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+}
+.sentence {
+  margin: 14px 0 0;
+  font: 400 17px/1.6 var(--font-sans);
+  color: var(--color-lead);
+  max-width: 720px;
+}
+.cause-label {
+  margin-top: 18px;
+}
+.meta {
+  margin: 16px 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 22px;
+  font-size: 13px;
+  color: var(--color-muted);
+}
+.meta b {
+  color: var(--color-text);
+  font-weight: 600;
+}
+@media (max-width: 900px) {
+  .box {
+    padding: 18px;
+  }
+  .headline {
+    font-size: 20px;
+  }
+}

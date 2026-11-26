@@ -1,0 +1,9 @@
+time {
+  color: var(--color-text);
+  white-space: nowrap;
+}
+.ago {
+  color: var(--color-muted);
+  font-size: 12px;
+  margin-top: 2px;
+}

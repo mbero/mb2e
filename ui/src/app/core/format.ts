@@ -31,13 +31,22 @@ export function relative(iso: string, now: number): string {
 export function absolute(iso: string): string {
   const date = new Date(iso);
   const day = date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
-  const time = date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+  const time = date.toLocaleTimeString('en-GB', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  });
   return `${day}, ${time}`;
 }
 
 /** Formats an instant in the browser time zone as "21:52". */
 export function clock(iso: string): string {
-  return new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
+  return new Date(iso).toLocaleTimeString('en-GB', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  });
 }
 
 /** Shows "1", or "2 of 3" when the push needed more than one attempt. */

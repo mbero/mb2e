@@ -1,0 +1,62 @@
+.section {
+  margin-top: 32px;
+}
+dl {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  border: 1px solid var(--color-line);
+  border-radius: 4px;
+}
+dl > div {
+  padding: 14px 16px;
+  border-right: 1px solid var(--color-line);
+  min-width: 0;
+}
+dl > div:last-child {
+  border-right: 0;
+}
+dd {
+  margin: 6px 0 0;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+dd a {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.state {
+  font-size: 15px;
+  font-weight: 700;
+  text-transform: uppercase;
+  gap: 8px;
+}
+.strong {
+  font-size: 15px;
+  font-weight: 600;
+}
+@media (max-width: 900px) {
+  dl {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  dl > div {
+    border-right: 0;
+    border-bottom: 1px solid var(--color-line);
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: baseline;
+  }
+  dl > div:last-child {
+    border-bottom: 0;
+  }
+  dd {
+    margin: 0;
+  }
+}

@@ -1,0 +1,134 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--color-brand-bg);
+  color: var(--color-brand-fg);
+  font-family: var(--font-mono);
+}
+:host :focus-visible {
+  outline-color: var(--color-brand-fg);
+}
+.brand {
+  padding: 20px 14px 18px;
+  border-bottom: 1px solid var(--color-brand-line);
+}
+.brand img {
+  display: block;
+  width: 220px;
+  height: auto;
+}
+.tag {
+  margin: 6px 0 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font: 500 11px var(--font-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-brand-muted);
+}
+.tag span {
+  width: 6px;
+  height: 6px;
+  background: var(--color-brand-accent);
+}
+.nav {
+  list-style: none;
+  margin: 0;
+  padding: 16px 10px;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 38px;
+  padding: 0 12px;
+  border-radius: 5px;
+  color: #d4d3cb;
+  font-size: 14px;
+  text-decoration: none;
+}
+.item:hover {
+  background: var(--color-brand-hover);
+  color: #fff;
+}
+.item.current {
+  background: var(--color-brand-active);
+  color: #fff;
+  font-weight: 600;
+}
+.marker {
+  margin-left: auto;
+  width: 8px;
+  height: 8px;
+  background: var(--color-brand-accent);
+}
+.pipeline {
+  margin: 0 10px 12px;
+  padding: 12px;
+  border: 1px solid var(--color-brand-line);
+  border-radius: 5px;
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--color-brand-muted);
+  overflow-wrap: anywhere;
+}
+.pipeline-title {
+  color: var(--color-brand-fg);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 11px;
+}
+.user {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  height: 60px;
+  padding: 0 14px;
+  border-top: 1px solid var(--color-brand-line);
+}
+.who {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  background: var(--color-brand-active);
+  font-size: 13px;
+  font-weight: 700;
+}
+.login {
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.signout {
+  background: none;
+  border: 0;
+  padding: 4px;
+  font: 400 13px var(--font-mono);
+  color: var(--color-brand-muted);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.signout:hover {
+  color: #fff;
+}

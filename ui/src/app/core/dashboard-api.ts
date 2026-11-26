@@ -17,7 +17,9 @@ export class DashboardApi {
   }
 
   deployments(limit: number): Observable<Deployment[]> {
-    return this.http.get<Deployment[]>('/api/deployments', { params: new HttpParams().set('limit', limit) });
+    return this.http.get<Deployment[]>('/api/deployments', {
+      params: new HttpParams().set('limit', limit),
+    });
   }
 
   /** Ends the session; Angular sends the XSRF-TOKEN cookie value as the X-XSRF-TOKEN header. */
