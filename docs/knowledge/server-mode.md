@@ -10,6 +10,7 @@ sources:
   - src/main/java/io/github/mbero/mb2e/adapter/in/web/DeployQueue.java
   - src/main/java/io/github/mbero/mb2e/adapter/in/web/DashboardApiController.java
   - src/main/java/io/github/mbero/mb2e/adapter/in/web/DashboardFiles.java
+  - src/main/java/io/github/mbero/mb2e/adapter/in/log/StepLog.java
   - Dockerfile
   - src/main/java/io/github/mbero/mb2e/adapter/out/persistence/SqliteDeploymentHistory.java
   - src/main/java/io/github/mbero/mb2e/infrastructure/config/DashboardSecurityConfig.java
@@ -58,6 +59,7 @@ Other facts:
 - Session cookie `mb2e_session`: `HttpOnly`, `Secure`, `SameSite=Lax`, idle limit 30 minutes, total limit 12 hours (`SessionLifetimeFilter`). Lax, not Strict: GitHub's redirect back to `/login/oauth2/code/github` is a cross-site navigation, and a Strict cookie would lose the login state.
 - `/api/*` without a session answers `401 {"error":"Sign in first."}`. `POST /api/logout` needs the `XSRF-TOKEN` cookie value in the `X-XSRF-TOKEN` header and answers `204`. The webhook and `/healthz` stay outside the login.
 - Each login event writes `step=login outcome=success|denied|failed|logout login=<login>`; never a token, a cookie or a code.
+- Log lines of the server, all on the `mb2e.step` logger: `step=start` once after start-up (port, repositories with branches, sync, poll, dashboard on or off); `step=webhook outcome=queued|coalesced|pong|ignored|refused` for every delivery, with the reason and the GitHub delivery id; `step=deploy` per run; `step=history` and `step=login`. Level: ERROR for `failed`, WARN for `refused` and a denied login, INFO otherwise. Free text is quoted and kept on one line, so a forged header or note title cannot add a line.
 - A git child process never sees an `MB2E_*` variable: each clone gets only its own token (`GitRunner.childEnvironment`).
 - A lock file `<workspace>/.mb2e.lock` refuses a second service on one workspace.
 - At start-up, `MB2E_SYNC_ON_START=true` runs one deployment to catch up missed pushes. `MB2E_POLL_INTERVAL_SECONDS` adds a periodic run.

@@ -36,7 +36,7 @@ Open a document only when its title matches the question.
 | [`design/dashboard/CLAUDE_DESIGN_BRIEF.md`](design/dashboard/CLAUDE_DESIGN_BRIEF.md) | Dashboard design brief | knowledge | current | 2026-11-26 |
 | [`design/dashboard/DESIGN_HANDOFF.md`](design/dashboard/DESIGN_HANDOFF.md) | Dashboard design handoff | knowledge | current | 2026-11-26 |
 | [`knowledge/server-mode.md`](knowledge/server-mode.md) | Server mode — how a push becomes a deployed site | knowledge | current | 2026-11-26 |
-| [`lessons-learned/server-deployment-playbook.md`](lessons-learned/server-deployment-playbook.md) | Server mode deployment — landscape and diagnostic playbooks | lesson | draft | 2026-11-25 |
+| [`lessons-learned/server-deployment-playbook.md`](lessons-learned/server-deployment-playbook.md) | Server mode deployment — landscape and diagnostic playbooks | lesson | draft | 2026-11-26 |
 | [`qa/project-rules.md`](qa/project-rules.md) | Project exceptions to the global coding rules | lesson | current | 2026-11-26 |
 | [`qa/review-ignore.md`](qa/review-ignore.md) | Known false alarms of code review in this project | lesson | current | 2026-11-25 |
 | [`qa/review-learnings.md`](qa/review-learnings.md) | Register of code-review findings that may recur | lesson | current | 2026-11-25 |

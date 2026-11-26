@@ -25,6 +25,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
 import org.springframework.web.servlet.function.RouterFunction;
 import org.springframework.web.servlet.function.ServerResponse;
 
@@ -95,8 +96,8 @@ public class ServerConfig {
     }
 
     @Bean
-    GithubWebhookController githubWebhookController(DeployQueue queue, WebhookSettings settings) {
-        return new GithubWebhookController(queue, settings);
+    GithubWebhookController githubWebhookController(DeployQueue queue, WebhookSettings settings, StepLog log) {
+        return new GithubWebhookController(queue, settings, log);
     }
 
     @Bean
@@ -109,10 +110,19 @@ public class ServerConfig {
         return WebRoutes.of(webhook, health);
     }
 
-    /** Runs one deployment at start-up, so a push that arrived while the service was down is caught up. */
+    /**
+     * Logs the start with the settings that explain the later lines, then runs one deployment, so a push that
+     * arrived while the service was down is caught up.
+     */
     @Bean
-    ApplicationRunner startupDeployment(DeployQueue queue, ServerProperties properties) {
+    ApplicationRunner startupDeployment(DeployQueue queue, ServerProperties properties, StepLog log,
+            Environment environment) {
         return arguments -> {
+            log.start("port=" + environment.getProperty("local.server.port", "-")
+                    + " source=" + properties.source().repository() + "@" + properties.source().branch()
+                    + " target=" + properties.target().repository() + "@" + properties.target().branch()
+                    + " syncOnStart=" + properties.syncOnStart() + " pollSeconds=" + properties.pollIntervalSeconds()
+                    + " dashboard=" + (properties.dashboard().enabled() ? "on" : "off"));
             if (properties.syncOnStart()) {
                 queue.submit("startup");
             }

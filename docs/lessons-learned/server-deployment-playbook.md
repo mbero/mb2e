@@ -2,7 +2,7 @@
 title: Server mode deployment — landscape and diagnostic playbooks
 type: lesson
 status: draft
-updated: 2026-11-25
+updated: 2026-11-26
 sources:
   - docker-compose.yml
   - .env.example
@@ -50,7 +50,7 @@ curl -fsS http://127.0.0.1:8080/healthz
 ### Failure mode 2 — GitHub shows a delivery error
 
 **Symptoms:** the webhook page shows `401`, `404` or a time-out.
-**Check:** `401` means the secret differs. `404` means the path is not `/webhook/github`. A time-out means the reverse proxy does not reach port 8080.
+**Check:** `401` means the secret differs. `404` means the path is not `/webhook/github`. A time-out means the reverse proxy does not reach port 8080. The service log has one `step=webhook` line per delivery that reached it: `outcome=refused reason="signature"` confirms a wrong secret; no line at all means the request stopped before the service.
 **Action:** correct the secret or the proxy. Redeliver the event from the GitHub webhook page.
 
 ### Failure mode 3 — the site does not change after a push

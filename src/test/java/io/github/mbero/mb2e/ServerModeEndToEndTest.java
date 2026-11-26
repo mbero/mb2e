@@ -2,6 +2,8 @@ package io.github.mbero.mb2e;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import io.github.mbero.mb2e.domain.model.Deployment;
+import io.github.mbero.mb2e.domain.port.out.DeploymentHistory;
 import java.net.ServerSocket;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -30,6 +32,7 @@ import org.junit.jupiter.api.io.TempDir;
 import org.springframework.boot.Banner;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.security.web.SecurityFilterChain;
 
 /**
  * A signed webhook to a commit in a bare target repository: the real server context, real git, and two bare
@@ -105,6 +108,7 @@ class ServerModeEndToEndTest {
         env.put("MB2E_WORKSPACE", temp.resolve("workspace").toString());
         env.put("MB2E_TEMPLATE_PATH", Path.of("src/main/resources/template/mbs-blog").toAbsolutePath().toString());
         env.put("MB2E_SYNC_ON_START", "false");
+        env.put("MB2E_LOG_FILE", temp.resolve("mb2e.log").toString());
         Map<String, Object> properties = new HashMap<>(ServerEnvironment.properties(env, path -> null));
         // ServerEnvironment refuses a file URL, so the test sets the two URLs after the validation; the
         // repository name that webhooks carry still comes from the https URL above.
@@ -265,17 +269,25 @@ class ServerModeEndToEndTest {
     @Test
     @Order(6)
     void everyRunIsInTheHistoryFileAndWithoutTheDashboardVariablesNoApiExists() throws Exception {
-        java.util.List<io.github.mbero.mb2e.domain.model.Deployment> newest = context
-                .getBean(io.github.mbero.mb2e.domain.port.out.DeploymentHistory.class).newest(500);
-        assertThat(newest).first().extracting(io.github.mbero.mb2e.domain.model.Deployment::outcome)
-                .isEqualTo("refused");
-        assertThat(newest).extracting(io.github.mbero.mb2e.domain.model.Deployment::outcome)
-                .contains("deployed", "up_to_date");
+        List<Deployment> newest = context.getBean(DeploymentHistory.class).newest(500);
+        assertThat(newest).first().extracting(Deployment::outcome).isEqualTo("refused");
+        assertThat(newest).extracting(Deployment::outcome).contains("deployed", "up_to_date");
         assertThat(temp.resolve("workspace").resolve("history.db")).isRegularFile();
         for (String path : new String[] {"/api/status", "/api/deployments", "/api/me"}) {
             assertThat(HTTP.send(HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + path)).build(),
                     HttpResponse.BodyHandlers.ofString()).statusCode()).as(path).isEqualTo(404);
         }
-        assertThat(context.getBeanNamesForType(org.springframework.security.web.SecurityFilterChain.class)).isEmpty();
+        assertThat(context.getBeanNamesForType(SecurityFilterChain.class)).isEmpty();
+    }
+
+    @Test
+    @Order(7)
+    void theLogFileHasTheStartLineOneLinePerDeliveryAndNoSecret() throws Exception {
+        String log = Files.readString(temp.resolve("mb2e.log"));
+        assertThat(log).contains("step=start outcome=started port=" + port + " source=me/notes@main"
+                + " target=me/me.github.io@main syncOnStart=false pollSeconds=0 dashboard=off");
+        assertThat(log.lines().filter(line -> line.contains("step=webhook outcome=")).count()).isGreaterThanOrEqualTo(14);
+        assertThat(log).contains("step=webhook outcome=queued delivery=", "step=deploy outcome=deployed")
+                .doesNotContain(SECRET, "unused-for-file-urls");
     }
 }

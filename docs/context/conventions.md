@@ -118,7 +118,7 @@ See [`architecture.md`](architecture.md) for the evidence.
 - The refusal sentence goes to standard error as plain text, with no stack trace and no colour.
 - The exit code is 0 for success and 1 for each refusal or failure. No other code exists.
 - A refusal message names the thing that it refuses: the path, the key, or the word.
-- The step line goes to the logger `mb2e.step` at INFO. A stack trace goes only to the optional log file (`adapter/in/log/StepLog.java:79-87`).
+- The step line goes to the logger `mb2e.step`: ERROR for `outcome=failed`, WARN for `refused` (and a denied login), INFO otherwise. Free text is quoted and kept on one line; a stack trace goes only to the optional log file (`adapter/in/log/StepLog.java`).
 
 Review error handling **before** you hand a change over. See
 `.agents/procedures/pre-commit-review.md`.
