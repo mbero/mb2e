@@ -15,7 +15,8 @@ public record ServerProperties(
         @DefaultValue Source source,
         @DefaultValue Target target,
         @DefaultValue Webhook webhook,
-        @DefaultValue Git git) {
+        @DefaultValue Git git,
+        @DefaultValue Dashboard dashboard) {
 
     /** The default of each setting that the launcher also needs; one literal for both. */
     public static final String DEFAULT_WORKSPACE = "/var/lib/mb2e";
@@ -34,6 +35,15 @@ public record ServerProperties(
 
     /** The webhook endpoint. */
     public record Webhook(Secret secret, @DefaultValue(DEFAULT_MAX_BODY_BYTES) long maxBodyBytes) {
+    }
+
+    /**
+     * The dashboard login: the one GitHub login that may sign in and the OAuth App. The two GitHub
+     * addresses have fixed defaults; only a test points them at a fake server.
+     */
+    public record Dashboard(@DefaultValue("false") boolean enabled, String allowedLogin, String clientId,
+            Secret clientSecret, @DefaultValue("https://github.com") String githubUrl,
+            @DefaultValue("https://api.github.com") String githubApiUrl) {
     }
 
     /** The author of the target commits and the time budget of a network command. */

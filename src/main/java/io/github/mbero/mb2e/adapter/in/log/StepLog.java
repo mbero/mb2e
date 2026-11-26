@@ -70,6 +70,17 @@ public class StepLog {
         append("step=deploy outcome=" + report.outcome() + " traceId=" + report.traceId() + detail);
     }
 
+    /**
+     * Logs one event of the dashboard login: {@code success}, {@code denied}, {@code failed} or {@code logout}.
+     * The line names only the GitHub login, never a token, a cookie or a code.
+     */
+    public void login(String event, String login) {
+        String line = "step=login outcome=" + event + " login=" + (login == null || login.isBlank() ? "-"
+                : oneLine(login).replace(' ', '_'));
+        LOG.info(line);
+        append(line);
+    }
+
     /** Keeps a text on one log line: line breaks become spaces and double quotes become single quotes. */
     private static String oneLine(String text) {
         return text == null ? "" : text.replaceAll("[\\r\\n]+", " ").replace('"', '\'').strip();

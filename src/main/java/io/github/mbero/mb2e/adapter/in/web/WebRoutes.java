@@ -17,9 +17,10 @@ public final class WebRoutes {
                 .build();
     }
 
-    /** The read-only JSON API of the dashboard. */
+    /** The read-only JSON API of the dashboard; the login guards every path under {@code /api}. */
     public static RouterFunction<ServerResponse> dashboard(DashboardApiController api) {
         return RouterFunctions.route()
+                .GET("/api/me", api::me)
                 .GET("/api/status", request -> api.status())
                 .GET("/api/deployments", api::deployments)
                 .build();

@@ -24,6 +24,15 @@ final class Mb2eEnvironment extends StandardEnvironment {
     /** Variable that names the local paths file; unset means the file in the working directory. */
     static final String LOCAL_FILE_VARIABLE = "MB2E_CONFIG";
     static final String LOCAL_FILE = "application_local_paths.yaml";
+    static final String EXCLUDE = "spring.autoconfigure.exclude";
+    private static final String BOOT_SECURITY = "org.springframework.boot.autoconfigure.security.";
+    /** The login beans that mb2e builds itself, or never needs: no password user, no Boot OAuth client. */
+    static final String LOGIN_AUTO_CONFIGURATION = BOOT_SECURITY + "servlet.UserDetailsServiceAutoConfiguration,"
+            + BOOT_SECURITY + "oauth2.client.OAuth2ClientAutoConfiguration,"
+            + BOOT_SECURITY + "oauth2.client.servlet.OAuth2ClientWebSecurityAutoConfiguration";
+    /** All web security: the CLI and a server without the dashboard start none of it. */
+    static final String SECURITY_AUTO_CONFIGURATION = BOOT_SECURITY + "servlet.SecurityAutoConfiguration,"
+            + BOOT_SECURITY + "servlet.SecurityFilterAutoConfiguration," + LOGIN_AUTO_CONFIGURATION;
 
     /** A configuration that mb2e refuses to start with. */
     static final class Refused extends RuntimeException {
@@ -54,6 +63,7 @@ final class Mb2eEnvironment extends StandardEnvironment {
         String local = localFile == null || localFile.isBlank() ? LOCAL_FILE : localFile;
         Map<String, Object> fixed = new LinkedHashMap<>();
         fixed.put(MODE, CLI_MODE);
+        fixed.put(EXCLUDE, SECURITY_AUTO_CONFIGURATION);
         fixed.put("spring.config.location", "classpath:/application.yaml,optional:file:" + local);
         return build(json, fixed);
     }
@@ -80,6 +90,18 @@ final class Mb2eEnvironment extends StandardEnvironment {
         fixed.put("server.error.include-message", "never");
         fixed.put("logging.level.io.github.mbero.mb2e", "info");
         fixed.put("logging.level.mb2e.step", "info");
+        boolean dashboard = Boolean.TRUE.equals(serverProperties.get("mb2e.server.dashboard.enabled"));
+        fixed.put(EXCLUDE, dashboard ? LOGIN_AUTO_CONFIGURATION : SECURITY_AUTO_CONFIGURATION);
+        // The session of the dashboard login: a cookie only, idle limit 30 minutes; DashboardSecurityConfig
+        // adds the total limit. SameSite=Lax, because GitHub's redirect back is a cross-site navigation.
+        fixed.put("server.servlet.session.timeout", "30m");
+        fixed.put("server.servlet.session.tracking-modes", "cookie");
+        fixed.put("server.servlet.session.cookie.name", "mb2e_session");
+        fixed.put("server.servlet.session.cookie.http-only", true);
+        fixed.put("server.servlet.session.cookie.secure", true);
+        fixed.put("server.servlet.session.cookie.same-site", "lax");
+        // The reverse proxy terminates TLS; its X-Forwarded-* headers make the login redirect use https.
+        fixed.put("server.forward-headers-strategy", "native");
         return build(json, fixed);
     }
 

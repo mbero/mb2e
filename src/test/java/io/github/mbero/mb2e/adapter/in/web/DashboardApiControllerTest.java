@@ -133,4 +133,16 @@ class DashboardApiControllerTest {
                 .isEqualTo("https://me.github.io");
         assertThat(new DashboardSettings("me/notes", null, 3, List.of()).siteUrl()).isNull();
     }
+
+    @Test
+    void meAnswersTheSignedInLogin() throws Exception {
+        mvc.perform(get("/api/me").principal(() -> "me")).andExpect(status().isOk())
+                .andExpect(content().json("{\"login\":\"me\"}", true));
+    }
+
+    @Test
+    void meWithoutAPrincipalIsUnauthorized() throws Exception {
+        mvc.perform(get("/api/me")).andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.error").value("Sign in first."));
+    }
 }

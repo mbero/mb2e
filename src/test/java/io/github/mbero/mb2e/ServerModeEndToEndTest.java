@@ -264,20 +264,18 @@ class ServerModeEndToEndTest {
 
     @Test
     @Order(6)
-    void theDashboardApiListsEveryRunNewestFirstFromTheHistoryFileOnTheVolume() throws Exception {
-        String deployments = HTTP.send(HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port
-                + "/api/deployments?limit=500")).build(), HttpResponse.BodyHandlers.ofString()).body();
-        Matcher outcomes = OUTCOME.matcher(deployments);
-        java.util.List<String> seen = new java.util.ArrayList<>();
-        while (outcomes.find()) {
-            seen.add(outcomes.group(1));
-        }
-        assertThat(seen).first().isEqualTo("refused");
-        assertThat(seen).contains("deployed", "up_to_date");
-        assertThat(deployments).doesNotContain(temp.toString());
-        String status = HTTP.send(HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + "/api/status"))
-                .build(), HttpResponse.BodyHandlers.ofString()).body();
-        assertThat(status).contains("\"maxAttempts\":3").contains("\"state\":\"");
+    void everyRunIsInTheHistoryFileAndWithoutTheDashboardVariablesNoApiExists() throws Exception {
+        java.util.List<io.github.mbero.mb2e.domain.model.Deployment> newest = context
+                .getBean(io.github.mbero.mb2e.domain.port.out.DeploymentHistory.class).newest(500);
+        assertThat(newest).first().extracting(io.github.mbero.mb2e.domain.model.Deployment::outcome)
+                .isEqualTo("refused");
+        assertThat(newest).extracting(io.github.mbero.mb2e.domain.model.Deployment::outcome)
+                .contains("deployed", "up_to_date");
         assertThat(temp.resolve("workspace").resolve("history.db")).isRegularFile();
+        for (String path : new String[] {"/api/status", "/api/deployments", "/api/me"}) {
+            assertThat(HTTP.send(HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + path)).build(),
+                    HttpResponse.BodyHandlers.ofString()).statusCode()).as(path).isEqualTo(404);
+        }
+        assertThat(context.getBeanNamesForType(org.springframework.security.web.SecurityFilterChain.class)).isEmpty();
     }
 }

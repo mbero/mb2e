@@ -2,7 +2,6 @@ package io.github.mbero.mb2e.infrastructure.config;
 
 import io.github.mbero.mb2e.adapter.in.log.StepLog;
 import io.github.mbero.mb2e.adapter.in.web.DashboardApiController;
-import io.github.mbero.mb2e.adapter.in.web.DashboardSettings;
 import io.github.mbero.mb2e.adapter.in.web.DeployQueue;
 import io.github.mbero.mb2e.adapter.in.web.GithubWebhookController;
 import io.github.mbero.mb2e.adapter.in.web.HealthController;
@@ -18,10 +17,7 @@ import io.github.mbero.mb2e.domain.port.out.DeploymentHistory;
 import io.github.mbero.mb2e.domain.port.out.GitWorkspace;
 import io.github.mbero.mb2e.domain.service.DeployService;
 import java.nio.file.Path;
-import java.time.Clock;
 import java.time.Duration;
-import java.util.Objects;
-import java.util.stream.Stream;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
@@ -42,7 +38,8 @@ import org.springframework.web.servlet.function.ServerResponse;
 public class ServerConfig {
 
     private static final Duration LOCAL_BUDGET = Duration.ofSeconds(30);
-    private static final int ATTEMPTS = 3;
+    /** The attempt limit of one deployment; the dashboard shows it as "n of 3". */
+    static final int ATTEMPTS = 3;
     private static final Duration SHUTDOWN_WAIT = Duration.ofSeconds(60);
     /** The history file lives on the workspace volume, next to the two clones, so it survives a restart. */
     private static final String HISTORY_FILE = "history.db";
@@ -108,18 +105,8 @@ public class ServerConfig {
     }
 
     @Bean
-    DashboardApiController dashboardApiController(DeployQueue queue, DeploymentHistory history,
-            ServerProperties properties, Mb2eProperties mb2e, StepLog log) {
-        DashboardSettings settings = new DashboardSettings(properties.source().repository(),
-                properties.target().repository(), ATTEMPTS,
-                Stream.of(properties.workspace(), mb2e.template().path()).filter(Objects::nonNull).toList());
-        return new DashboardApiController(queue::state, history, settings, Clock.systemUTC(), log);
-    }
-
-    @Bean
-    RouterFunction<ServerResponse> webRoutes(GithubWebhookController webhook, HealthController health,
-            DashboardApiController dashboard) {
-        return WebRoutes.of(webhook, health).and(WebRoutes.dashboard(dashboard));
+    RouterFunction<ServerResponse> webRoutes(GithubWebhookController webhook, HealthController health) {
+        return WebRoutes.of(webhook, health);
     }
 
     /** Runs one deployment at start-up, so a push that arrived while the service was down is caught up. */

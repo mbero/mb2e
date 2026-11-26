@@ -34,6 +34,10 @@ public class DashboardApiController {
             String targetCommit, String cause) {
     }
 
+    /** The signed-in GitHub login. */
+    record Me(String login) {
+    }
+
     /** A short error answer with no stack trace. */
     record Problem(String error) {
     }
@@ -60,6 +64,11 @@ public class DashboardApiController {
         return json(HttpStatus.OK, new Status(state.get().name().toLowerCase(Locale.ROOT), startedAt.toString(),
                 Duration.between(startedAt, now).toSeconds(), settings.sourceRepo(), settings.targetRepo(),
                 settings.siteUrl(), settings.maxAttempts()));
+    }
+
+    public ServerResponse me(ServerRequest request) {
+        return request.principal().map(principal -> json(HttpStatus.OK, new Me(principal.getName())))
+                .orElseGet(() -> json(HttpStatus.UNAUTHORIZED, new Problem("Sign in first.")));
     }
 
     public ServerResponse deployments(ServerRequest request) {

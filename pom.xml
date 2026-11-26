@@ -43,6 +43,11 @@
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-web</artifactId>
     </dependency>
+    <!-- The dashboard login of the server mode; the CLI excludes their auto-configuration (Mb2eEnvironment). -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-oauth2-client</artifactId>
+    </dependency>
     <!-- The deployment history of the server mode; the version comes from the Spring Boot parent. -->
     <dependency>
       <groupId>org.xerial</groupId>
