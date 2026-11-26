@@ -2,7 +2,7 @@
 title: Session history
 type: context
 status: current
-updated: 2026-11-25
+updated: 2026-11-26
 sources: []
 tags: [meta, sessions]
 ---
@@ -33,6 +33,75 @@ Procedure: [`.agents/procedures/session-handoff.md`](../../.agents/procedures/se
 ---
 
 <!-- NEW ENTRIES GO DIRECTLY BELOW THIS LINE -->
+
+### Session 8 — 2026-11-26
+
+**Goal:** Specify the deployment dashboard and implement it phase by phase (issue https://github.com/mbero/mb2e/issues/7, spec #6); then #3 section 1 (code review and refactoring).
+
+**Done:**
+
+- Backlog issue #3 (review, mikr.us deployment, observability). Spec #6 settled in a grilling session; design brief and handoff in `docs/design/dashboard/` (`1f8f5ff`).
+- Branch `feature/dashboard`, head `208c551`, pushed. PR https://github.com/mbero/mb2e/pull/8 to `main` (the earlier base was merged in PR #5); checks `build`, `check`, `test-and-build` pass. The PR closes no issue.
+- Steps 1–2 (`1d6e0d0`): `DeploymentHistory` port, `SqliteDeploymentHistory` (`history.db` in the workspace, newest 500 rows), `GET /api/status`, `GET /api/deployments`.
+- Step 3 (`9c74069`): GitHub OAuth login for one login (`DashboardSecurityConfig`, `OwnerOnlyUserService`, `LoginAnswers`, `SessionLifetimeFilter`), opt-in through three `MB2E_DASHBOARD_*` variables; `CliSecurityIsolationTest`; `DashboardLoginEndToEndTest` with a fake GitHub.
+- Step 4 (`1199185`): Angular 22 app in `ui/` (zoneless, signals, Vitest, 21 tests), base `/dashboard/`.
+- Step 5 (`e1805ee`, `05555e4`): Node stage in `Dockerfile`, `DashboardFiles` serves the UI (`MB2E_DASHBOARD_FILES`), `.github/workflows/dashboard-ui.yml`.
+- Step 6 (`3ab7c95`, `d82609f`): SQLite native library baked into the image; `deploy/Caddyfile`; README "Dashboard"; ADRs 0006–0009.
+- Step 7 with sample data (headless Chrome, `playwright-core`, mock API): screens match the mockups at 1440 px and 390 px, contrast 5.6:1 or more, keyboard walk-through of the dashboard. Fixes in `570db35` (closed drawer out of the tab order, expand label in the visible time format).
+- `482065d`: every Angular component has its template and styles in separate `.html` / `.css` files; rule [P-UI-01].
+- #3 section 1, ticked in the issue: `88754ca` splits `renderBlocks`, `BuildService.run` and `planFor` and replaces full class names by imports, guarded by `MarkdownBlocksCharacterizationTest`; `208c551` logs failed at ERROR and refused at WARN, quotes free text on one line, adds `step=webhook` and `step=start`. Rules P-TEST-02, P-LOG-01, P-LOG-02.
+- 310 Maven tests and 21 Vitest tests green. A real vault build gives the same report from the old and the new jar. Image checked with `docker run --read-only --tmpfs /tmp` and through Caddy with `tls internal`.
+
+**Key decisions:**
+
+- SQLite history, Angular in the image, GitHub OAuth for one login, server-side session with `SameSite=Lax` → ADRs 0006–0009.
+- Public `/dashboard/*` shell, only `/api/*` needs the login; badges monochrome; navy brand shell; `GET /api/me`; `maxAttempts` in `/api/status` → #6, #7 and `docs/design/dashboard/DESIGN_HANDOFF.md` section 0.
+- Log level follows the outcome; a refused webhook is logged → `docs/qa/project-rules.md` P-LOG-01, P-LOG-02.
+
+**Owner decisions (do not ask again):**
+
+- Commit and push only after the owner says yes, every time.
+- New mb2e issues go to `mbero/mb2e` and board 2 only, never to `service-spec-harness`.
+- Six commits of this session (`9c74069`..`d82609f`) carry `Co-Authored-By` and `Claude-Session` lines by mistake. Keep them; no history rewrite. New commits carry neither line (Session 5 decision still applies). PR bodies keep the "Generated with Claude Code" footer, as PR #4 did.
+- Angular templates and styles in separate files (P-UI-01).
+
+**Output files:**
+
+- `docs/decisions/0006`–`0009`, `deploy/Caddyfile`, `ui/`, `docs/design/dashboard/`, `docs/qa/project-rules.md` (P-UI-01, P-TEST-02, P-LOG-01, P-LOG-02).
+
+**Key files and classes for later work:**
+
+| Path | Why it matters |
+|---|---|
+| `infrastructure/config/DashboardSecurityConfig.java` | All dashboard beans and the filter chain; exists only with the three variables |
+| `Mb2eEnvironment.java` | Excludes the security auto-configuration in the CLI and without the dashboard |
+| `adapter/in/web/DashboardFiles.java` | Serves the UI; `index.html` only for paths without an extension |
+| `adapter/in/log/StepLog.java` | Every `step=` line: level by outcome, `quoted` and `word` keep a line single |
+| `ui/src/app/core/dashboard-store.ts` | Polling every 15 s, pause on a hidden tab |
+| `Dockerfile` | Node stage, native SQLite library in `/opt/mb2e/native` |
+
+**Dead ends — do not repeat:**
+
+- `CommonOAuth2Provider.GITHUB` with an empty scope set keeps `read:user`; build the `ClientRegistration` by hand.
+- `SameSite=Strict` loses the login state on GitHub's cross-site redirect back.
+- A plain `docker run` hides the SQLite failure; only `--read-only --tmpfs /tmp` (noexec) shows `NativeLibraryNotFoundException`.
+- Spring Security 6.5.11 has no `csrf.spa()`; use `CookieCsrfTokenRepository.withHttpOnlyFalse()` with `CsrfTokenRequestAttributeHandler`.
+- A file copied from the host keeps mode 600; the image runs `chmod -R a+rX /opt/mb2e/dashboard`.
+- A closed drawer hidden only by `transform` still takes the keyboard focus; it needs `visibility: hidden`.
+
+**Open questions:**
+
+| Question | Who or what can answer it |
+|---|---|
+| Create the two GitHub OAuth Apps (production, local callback `http://localhost:8080/login/oauth2/code/github`) | The owner |
+| Keep or translate the Polish tooltip `Notatka nie jest publikowana` of the blog's missing-link span (R-DOC-03 asks for English) | The owner |
+| Save the rule candidates: compose hardening in image tests; no `index.html` for a missing asset; CLI security exclusion test; fake OAuth provider in tests; empty scope keeps the preset; a hidden element leaves the tab order; an aria-label uses the visible format? | The owner |
+
+**Not done:**
+
+- Step 7 of #7: the real sign-in and sign-out walk-through, a failed push shown within 15 s, and the restart check need the local OAuth App; exposure on the server waits for #3 section 2.
+- #3 sections 2 (mikr.us deployment) and 3 (observability).
+- Not committed by design: `.gitignore`, `scripts/` (Session 7), `profiles/github-issues.md`, `AS_A_SERVICE_ARCHITECTURE_PLAN.md`, `GLOSSARY.md`, `src/main/resources/template/mbs-blog/README.md`, and this entry.
 
 ### Session 7 — 2026-11-25
 

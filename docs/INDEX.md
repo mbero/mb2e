@@ -40,4 +40,4 @@ Open a document only when its title matches the question.
 | [`qa/project-rules.md`](qa/project-rules.md) | Project exceptions to the global coding rules | lesson | current | 2026-11-26 |
 | [`qa/review-ignore.md`](qa/review-ignore.md) | Known false alarms of code review in this project | lesson | current | 2026-11-25 |
 | [`qa/review-learnings.md`](qa/review-learnings.md) | Register of code-review findings that may recur | lesson | current | 2026-11-25 |
-| [`sessions/history.md`](sessions/history.md) | Session history | context | current | 2026-11-25 |
+| [`sessions/history.md`](sessions/history.md) | Session history | context | current | 2026-11-26 |
