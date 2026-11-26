@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>mb2e — Access denied</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#fff;color:#111;-webkit-font-smoothing:antialiased}
+a{color:#111;text-underline-offset:3px}a:hover{color:#000}
+:focus-visible{outline:2px solid #000;outline-offset:2px}
+</style>
+</helmet>
+<div style="min-height:800px;display:flex;flex-direction:column;background:#f6f6f6;font-family:'Fira Code',monospace">
+<main style="flex:1 1 auto;display:flex;align-items:center;justify-content:center;padding:48px 20px">
+<div style="width:100%;max-width:440px;background:#fff;border:1px solid #e3e3e3;border-radius:5px;overflow:hidden;box-sizing:border-box">
+<div style="background:#23262d;padding:22px 24px 18px"><img src="mb2e-logo.jpg" alt="mb2e — Markdown Based Blog Engine" style="display:block;width:220px"></div>
+<div style="padding:28px 36px 36px">
+<div style="padding-top:0;font-size:12px;font-weight:500;letter-spacing:.08em;text-transform:uppercase">Deployment dashboard</div>
+<h1 style="margin:10px 0 0;font-size:32px;line-height:1.12;font-weight:700;letter-spacing:-.02em;text-transform:uppercase">No access</h1>
+<p style="margin:14px 0 0;font:400 16px/1.6 Inter,sans-serif;color:#3d3d3d">You are signed in as <strong style="font-family:'Fira Code',monospace;font-weight:600">octocat</strong>. This dashboard is open only to the owner of this blog.</p>
+<div style="margin-top:20px;padding:14px 16px;border-left:3px solid #dcdcdc;background:#f6f6f6;font-size:13px;line-height:1.6;color:#5c5c5c">Wrong account? Sign out, then sign in to GitHub with the owner's account.</div>
+<a href="#signout" style="margin-top:24px;display:inline-flex;align-items:center;justify-content:center;height:44px;padding:0 18px;border:2px solid #000;border-radius:4px;color:#000;font-size:14px;font-weight:600;text-decoration:none">Sign out</a>
+</div>
+</div>
+</main>
+<footer style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px 24px;padding:20px 40px;border-top:1px solid #e6e6e6;font-size:13px;color:#5c5c5c">
+<span style="color:#111;font-weight:600">mb2e</span><span>Markdown Based Blog Engine</span>
+</footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic { renderVals() { return {}; } }
+</script>
+</body>
+</html>

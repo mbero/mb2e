@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>mb2e — Low-fi wireframes</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#fff;color:#111}
+.wf{border:1px solid #111;border-radius:4px;height:460px;display:flex;overflow:hidden;background:#fff}
+.cap{margin:10px 0 0;font:700 13px 'Fira Code',monospace;text-transform:uppercase;letter-spacing:.04em}
+.nt{margin:4px 0 0;font:400 12px/1.5 'Fira Code',monospace;color:#5c5c5c}
+.bx{border:1px dashed #8a8a8a;border-radius:3px;display:flex;align-items:center;justify-content:center;font:500 10px 'Fira Code',monospace;color:#5c5c5c;text-transform:uppercase;letter-spacing:.04em;text-align:center;padding:4px;box-sizing:border-box}
+.ln{height:6px;background:#dcdcdc;border-radius:2px}
+.rl{border-top:2px solid #111}
+</style>
+</helmet>
+<div style="width:1440px;box-sizing:border-box;padding:48px;font-family:'Fira Code',monospace">
+<h1 style="margin:0;font-size:28px;font-weight:700;text-transform:uppercase;letter-spacing:-.02em">Low-fi wireframes</h1>
+<p class="nt" style="font-size:13px">Structure only. Dashed box = component; thick rule = section separator (2 px black).</p>
+<div style="margin-top:32px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:40px 32px">
+
+<div>
+<div class="wf" style="flex-direction:column;align-items:center;justify-content:center;gap:12px;background:#f6f6f6">
+<div style="width:70%;background:#fff;border:1px solid #c4c4c4;padding:18px;display:flex;flex-direction:column;gap:10px">
+<div class="bx" style="height:56px">Logo mb2e</div><div class="rl"></div><div class="ln" style="width:40%"></div><div style="height:14px;background:#111;width:60%"></div><div class="ln"></div><div class="ln" style="width:80%"></div>
+<div class="bx" style="height:34px;background:#111;color:#fff;border-style:solid">Sign in with GitHub</div><div class="ln" style="width:70%"></div></div>
+</div>
+<p class="cap">1 · Sign-in</p><p class="nt">Centered card on panel grey. One action.</p>
+</div>
+
+<div>
+<div class="wf" style="flex-direction:column;align-items:center;justify-content:center;background:#f6f6f6">
+<div style="width:70%;background:#fff;border:1px solid #c4c4c4;padding:18px;display:flex;flex-direction:column;gap:10px">
+<div class="bx" style="height:56px">Logo mb2e</div><div class="rl"></div><div style="height:14px;background:#111;width:50%"></div><div class="ln"></div><div class="bx" style="height:30px;border-left:3px solid #111">Notice: wrong account</div>
+<div class="bx" style="height:30px;width:50%;border:2px solid #111">Sign out</div></div>
+</div>
+<p class="cap">2 · Access denied</p><p class="nt">Same card. Shows the signed-in login, no tech details.</p>
+</div>
+
+<div style="grid-column:span 2">
+<div class="wf">
+<div style="width:120px;background:#f6f6f6;border-right:1px solid #c4c4c4;display:flex;flex-direction:column;padding:10px;gap:8px">
+<div class="bx" style="height:46px">Logo</div><div class="bx" style="height:20px;background:#e2e2e2">Dashboard</div><div class="bx" style="height:20px">Live site ↗</div>
+<div style="flex:1"></div><div class="bx" style="height:30px">@login · Sign out</div></div>
+<div style="flex:1;padding:16px 20px;display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;justify-content:space-between;align-items:flex-end"><div style="height:20px;width:40%;background:#111"></div><div class="ln" style="width:28%"></div></div>
+<div class="rl"></div><div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px"><div class="bx" style="height:40px">State</div><div class="bx" style="height:40px">Uptime</div><div class="bx" style="height:40px">Source</div><div class="bx" style="height:40px">Target</div><div class="bx" style="height:40px">Site</div></div>
+<div class="rl"></div><div class="bx" style="height:92px;border:2px solid #111">Last deployment: badge · headline · sentence · cause · meta</div>
+<div class="rl"></div><div style="height:16px;background:#f6f6f6;border-bottom:2px solid #111"></div>
+<div class="bx" style="height:18px;justify-content:flex-start;border-left:3px solid #111">▸ failed row</div><div class="bx" style="height:18px;justify-content:flex-start">row</div><div class="bx" style="height:34px;justify-content:flex-start;background:#f6f6f6">▾ refused row + cause</div><div class="bx" style="height:18px;justify-content:flex-start">row</div><div class="bx" style="height:18px;justify-content:flex-start">row</div>
+</div></div>
+<p class="cap">3 · Dashboard</p><p class="nt">Order answers the question top-down: status → last deployment → history. "Updated 5 s ago" top-right.</p>
+</div>
+
+<div>
+<div class="wf" style="flex-direction:column;padding:16px;gap:10px">
+<div style="height:16px;width:50%;background:#111"></div><div class="rl"></div><div class="bx" style="height:34px">Status (running)</div><div class="rl"></div>
+<div class="bx" style="flex:1;flex-direction:column;gap:6px">◻<span>No deployments yet</span><span style="text-transform:none">sentence + hint</span></div></div>
+<p class="cap">4 · Empty</p><p class="nt">Status card stays; summary + table replaced by one message.</p>
+</div>
+
+<div>
+<div class="wf" style="flex-direction:column;padding:16px;gap:10px">
+<div style="height:16px;width:50%;background:#111"></div><div class="ln" style="width:40%"></div><div class="rl"></div>
+<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px"><div style="height:34px;background:#ebebeb"></div><div style="height:34px;background:#ebebeb"></div><div style="height:34px;background:#ebebeb"></div><div style="height:34px;background:#ebebeb"></div></div>
+<div class="rl"></div><div style="height:80px;background:#ebebeb"></div><div class="rl"></div><div style="height:16px;background:#ebebeb"></div><div style="height:16px;background:#ebebeb"></div><div style="height:16px;background:#ebebeb"></div></div>
+<p class="cap">5 · Loading</p><p class="nt">Static skeleton, same geometry as the real page — no layout jump.</p>
+</div>
+
+<div>
+<div class="wf" style="flex-direction:column;padding:16px;gap:10px">
+<div style="height:16px;width:50%;background:#111"></div><div class="bx" style="height:46px;border-left:3px solid #111;justify-content:flex-start">Can't reach the service · retry 15 s</div>
+<div class="rl"></div><div class="bx" style="height:60px;opacity:.5">Last known data · STALE</div><div class="bx" style="height:100px;opacity:.5">Table (dimmed)</div>
+<div class="bx" style="height:70px;border-left:3px solid #111;flex-direction:column;gap:6px">Session expired<span style="background:#111;color:#fff;padding:3px 8px">Sign in again</span></div></div>
+<p class="cap">6 · Errors</p><p class="nt">API down: keep data, mark stale. Session expired: notice + sign-in button.</p>
+</div>
+
+<div>
+<div class="wf" style="width:200px;flex-direction:column">
+<div style="height:34px;border-bottom:1px solid #c4c4c4;display:flex;align-items:center;justify-content:space-between;padding:0 8px"><div class="bx" style="height:22px;width:50px">Logo</div><div style="width:24px;height:24px;border:2px solid #111"></div></div>
+<div style="padding:10px;display:flex;flex-direction:column;gap:7px">
+<div style="height:12px;width:60%;background:#111"></div><div class="rl"></div><div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:3px"><div class="bx" style="height:24px"></div><div class="bx" style="height:24px"></div><div class="bx" style="height:24px"></div><div class="bx" style="height:24px"></div></div>
+<div class="rl"></div><div class="bx" style="height:70px;border:2px solid #111">Last</div><div class="rl"></div>
+<div class="bx" style="height:40px;border-left:3px solid #111">card</div><div class="bx" style="height:40px">card</div><div class="bx" style="height:56px">card + Show cause</div><div class="bx" style="height:30px">card</div></div></div>
+<p class="cap">7 · Narrow &lt; 900 px</p><p class="nt">Top bar + menu button; table → stacked cards.</p>
+</div>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1300}}'>
+class Component extends DCLogic { renderVals() { return {}; } }
+</script>
+</body>
+</html>

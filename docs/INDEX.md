@@ -2,7 +2,7 @@
 title: Knowledge base index
 type: context
 status: current
-updated: 2026-11-25
+updated: 2026-11-26
 sources: []
 tags: [meta, index]
 ---
@@ -29,9 +29,11 @@ Open a document only when its title matches the question.
 | [`decisions/0003-deploy-by-git-clones-and-the-git-program.md`](decisions/0003-deploy-by-git-clones-and-the-git-program.md) | Deploy with two shallow clones and the git program | decision | current | 2026-11-25 |
 | [`decisions/0004-signed-webhook-and-one-slot-queue.md`](decisions/0004-signed-webhook-and-one-slot-queue.md) | Accept a signed webhook and run one deployment at a time | decision | current | 2026-11-25 |
 | [`decisions/0005-one-container-one-volume-one-replica.md`](decisions/0005-one-container-one-volume-one-replica.md) | Run one container on one volume with a read-only root | decision | current | 2026-11-25 |
-| [`knowledge/server-mode.md`](knowledge/server-mode.md) | Server mode — how a push becomes a deployed site | knowledge | current | 2026-11-25 |
+| [`design/dashboard/CLAUDE_DESIGN_BRIEF.md`](design/dashboard/CLAUDE_DESIGN_BRIEF.md) | Dashboard design brief | knowledge | current | 2026-11-26 |
+| [`design/dashboard/DESIGN_HANDOFF.md`](design/dashboard/DESIGN_HANDOFF.md) | Dashboard design handoff | knowledge | current | 2026-11-26 |
+| [`knowledge/server-mode.md`](knowledge/server-mode.md) | Server mode — how a push becomes a deployed site | knowledge | current | 2026-11-26 |
 | [`lessons-learned/server-deployment-playbook.md`](lessons-learned/server-deployment-playbook.md) | Server mode deployment — landscape and diagnostic playbooks | lesson | draft | 2026-11-25 |
-| [`qa/project-rules.md`](qa/project-rules.md) | Project exceptions to the global coding rules | lesson | current | 2026-11-25 |
+| [`qa/project-rules.md`](qa/project-rules.md) | Project exceptions to the global coding rules | lesson | current | 2026-11-26 |
 | [`qa/review-ignore.md`](qa/review-ignore.md) | Known false alarms of code review in this project | lesson | current | 2026-11-25 |
 | [`qa/review-learnings.md`](qa/review-learnings.md) | Register of code-review findings that may recur | lesson | current | 2026-11-25 |
 | [`sessions/history.md`](sessions/history.md) | Session history | context | current | 2026-11-25 |

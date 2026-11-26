@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>mb2e — Dashboard</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#fff;color:#111;-webkit-font-smoothing:antialiased}
+a{color:#111;text-underline-offset:3px}a:hover{color:#000}
+:focus-visible{outline:2px solid #000;outline-offset:2px}
+.th{background:#f6f6f6;border-bottom:2px solid #111;font:700 12px 'Fira Code',monospace;text-transform:uppercase;letter-spacing:.06em;text-align:left;padding:10px 14px;white-space:nowrap}
+.td{padding:12px 14px;border-bottom:1px solid #e3e3e3;vertical-align:top;font:400 13px 'Fira Code',monospace}
+.tr:hover .td{background:#ebebeb}
+.b{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 9px;border-radius:4px;font:600 12px 'Fira Code',monospace;letter-spacing:.02em;white-space:nowrap;box-sizing:border-box}
+.lbl{font:500 12px 'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:#5c5c5c}
+.xbtn{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border:1px solid #e3e3e3;border-radius:4px;background:#fff;cursor:pointer;color:#111;padding:0}
+.xbtn:hover{border-color:#000}
+.sb :focus-visible{outline-color:#e6e5dd}.sbi:hover{background:#2e3139;color:#fff}.sbo:hover{color:#fff}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</helmet>
+<div style="display:flex;flex-wrap:wrap;min-height:100vh;font-family:'Fira Code',monospace">
+<a href="#content" style="position:absolute;left:-999px;top:12px;padding:8px 14px;background:#000;color:#fff;font-size:14px;text-decoration:none">Skip to content</a>
+
+<!-- Sidebar: brand palette taken from the mb2e logo -->
+<nav aria-label="Main" class="sb" style="flex:0 0 280px;display:flex;flex-direction:column;background:#23262d;color:#e6e5dd;border-right:1px solid #23262d">
+<div style="padding:20px 14px 18px;border-bottom:1px solid #383b43">
+<img src="mb2e-logo.jpg" alt="mb2e — Markdown Based Blog Engine" style="display:block;width:220px">
+<div style="margin:6px 0 0 8px;display:flex;align-items:center;gap:8px;font:500 11px 'Fira Code',monospace;letter-spacing:.1em;text-transform:uppercase;color:#aaaeb7"><span style="width:6px;height:6px;background:#4377dd"></span>Deployment dashboard</div>
+</div>
+<ul style="list-style:none;margin:0;padding:16px 10px;flex:1 1 auto;display:flex;flex-direction:column;gap:2px">
+<li><a href="#content" aria-current="page" class="sbi" style="position:relative;display:flex;align-items:center;gap:10px;height:38px;padding:0 12px;border-radius:5px;background:#3a3e47;color:#fff;font-size:14px;font-weight:600;text-decoration:none">
+<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="2" y="2" width="5" height="5"/><rect x="9" y="2" width="5" height="5"/><rect x="2" y="9" width="5" height="5"/><rect x="9" y="9" width="5" height="5"/></svg>Dashboard<span aria-hidden="true" style="margin-left:auto;width:8px;height:8px;background:#4377dd"></span></a></li>
+<li><a href="https://mbero.github.io" class="sbi" style="display:flex;align-items:center;gap:10px;height:38px;padding:0 12px;border-radius:5px;color:#d4d3cb;font-size:14px;text-decoration:none">
+<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M9 3h4v4M13 3 7 9M11 9v4H3V5h4"/></svg>Live site<span style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)"> (opens the blog)</span></a></li>
+</ul>
+<div style="margin:0 10px 12px;padding:12px;border:1px solid #383b43;border-radius:5px;font-size:12px;line-height:1.7;color:#aaaeb7">
+<div style="color:#e6e5dd;font-weight:600;text-transform:uppercase;letter-spacing:.06em;font-size:11px">Pipeline</div>
+mbero/notes<br><span aria-hidden="true">↓</span> build<br>mbero/mbero.github.io
+</div>
+<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;height:60px;padding:0 14px;border-top:1px solid #383b43">
+<div style="display:flex;align-items:center;gap:10px;min-width:0">
+<span aria-hidden="true" style="display:flex;align-items:center;justify-content:center;width:28px;height:28px;border:1px solid #55596300;border-radius:4px;background:#3a3e47;color:#e6e5dd;font-size:13px;font-weight:700">M</span>
+<span style="font-size:14px;font-weight:600;color:#e6e5dd;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">mbero</span>
+</div>
+<a href="#signout" class="sbo" style="font-size:13px;color:#aaaeb7">Sign out</a>
+</div>
+</nav>
+
+<!-- Content -->
+<main id="content" tabindex="-1" style="flex:999 1 560px;min-width:0;padding:72px 40px 96px;box-sizing:border-box">
+<div style="max-width:1040px;margin:0 auto">
+
+<div style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 24px">
+<div>
+<div class="lbl" style="color:#111">Dashboard</div>
+<h1 style="margin:16px 0 0;font-size:44px;line-height:1.12;font-weight:700;letter-spacing:-.02em;text-transform:uppercase">Deployments</h1>
+</div>
+<p style="margin:0;display:flex;align-items:center;gap:8px;font-size:13px;color:#5c5c5c">
+<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M13.5 8A5.5 5.5 0 1 1 11.8 4M13.5 2.5V5H11"/></svg>
+Updated <time>5 s ago</time> · refreshes every 15 s</p>
+</div>
+
+<!-- Status card -->
+<section aria-labelledby="st-h" style="margin-top:32px;border-top:2px solid #111">
+<h2 id="st-h" class="lbl" style="margin:14px 0 10px">Service</h2>
+<dl style="margin:0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:0;border:1px solid #e3e3e3;border-radius:4px">
+<div style="padding:14px 16px;border-right:1px solid #e3e3e3"><dt class="lbl">State</dt><dd style="margin:6px 0 0;display:flex;align-items:center;gap:8px;font-size:15px;font-weight:700;text-transform:uppercase"><svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><circle cx="5" cy="5" r="4" fill="none" stroke="#000" stroke-width="2"/></svg>{{stateLabel}}</dd></div>
+<div style="padding:14px 16px;border-right:1px solid #e3e3e3"><dt class="lbl">Uptime</dt><dd style="margin:6px 0 0;font-size:15px;font-weight:600">3d 4h 12m</dd></div>
+<div style="padding:14px 16px;border-right:1px solid #e3e3e3;min-width:0"><dt class="lbl">Source</dt><dd style="margin:6px 0 0;font-size:14px;display:flex;align-items:center;gap:6px;min-width:0"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-label="Private" role="img"><rect x="3" y="7" width="10" height="7" rx="1"/><path d="M5 7V5a3 3 0 0 1 6 0v2"/></svg><a href="https://github.com/mbero/notes" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">mbero/notes</a></dd></div>
+<div style="padding:14px 16px;border-right:1px solid #e3e3e3;min-width:0"><dt class="lbl">Target</dt><dd style="margin:6px 0 0;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><a href="https://github.com/mbero/mbero.github.io">mbero/mbero.github.io</a></dd></div>
+<div style="padding:14px 16px;min-width:0"><dt class="lbl">Site</dt><dd style="margin:6px 0 0;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><a href="https://mbero.github.io">mbero.github.io ↗</a></dd></div>
+</dl>
+</section>
+
+<!-- Last deployment summary -->
+<section aria-labelledby="last-h" style="margin-top:40px;border-top:2px solid #111">
+<h2 id="last-h" class="lbl" style="margin:14px 0 12px">Last deployment</h2>
+<sc-if value="{{isFailed}}" hint-placeholder-val="{{ true }}">
+<div style="border:2px solid #000;border-radius:5px;padding:24px 26px">
+<div style="display:flex;flex-wrap:wrap;align-items:center;gap:14px">
+<span class="b" style="background:#111;color:#f2f2f2;border:2px solid #000;height:30px;font-size:13px"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 2v5"/><circle cx="6" cy="9.5" r=".6" fill="currentColor"/></svg>FAILED</span>
+<p style="margin:0;font-size:24px;font-weight:700;letter-spacing:-.02em;text-transform:uppercase">Your last push did not deploy</p>
+</div>
+<p style="margin:14px 0 0;font:400 17px/1.6 Inter,sans-serif;color:#3d3d3d;max-width:720px">Commit <a href="#c">a41c9e2</a> was built, but the push to <strong>mbero/mbero.github.io</strong> was rejected 3 times. The site still shows the deployment from 21:52 (<a href="#c">9f8e7d6</a>). The next push or poll will try again.</p>
+<div class="lbl" style="margin-top:18px">Cause</div>
+<pre style="margin:8px 0 0;padding:16px 18px;background:#111;color:#f2f2f2;border-radius:4px;font:400 13px/1.65 'Fira Code',monospace;white-space:pre-wrap;overflow-x:auto">git push rejected 3 times
+remote: Permission to mbero/mbero.github.io.git denied.
+fatal: Authentication failed (token expired)</pre>
+<p style="margin:16px 0 0;display:flex;flex-wrap:wrap;gap:6px 22px;font-size:13px;color:#5c5c5c"><span>Finished <time datetime="2026-11-25T21:14:03Z" style="color:#111">25 Nov, 22:14:03</time> · 8 min ago</span><span>Trigger <b style="color:#111;font-weight:600">push</b></span><span>Attempts <b style="color:#111;font-weight:600">3 of 3</b></span></p>
+</div>
+</sc-if>
+<sc-if value="{{isDeployed}}" hint-placeholder-val="{{ false }}">
+<div style="border:1px solid #e3e3e3;border-radius:5px;padding:24px 26px">
+<div style="display:flex;flex-wrap:wrap;align-items:center;gap:14px">
+<span class="b" style="background:#111;color:#f2f2f2;border:1px solid #111;height:30px;font-size:13px"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m2 6.5 2.5 2.5L10 3.5"/></svg>DEPLOYED</span>
+<p style="margin:0;font-size:24px;font-weight:700;letter-spacing:-.02em;text-transform:uppercase">Your last push is live</p>
+</div>
+<p style="margin:14px 0 0;font:400 17px/1.6 Inter,sans-serif;color:#3d3d3d;max-width:720px">Commit <a href="#c">7d03b1f</a> was built and pushed to <strong>mbero/mbero.github.io</strong> as <a href="#c">9f8e7d6</a>. GitHub Pages usually publishes within a minute.</p>
+<p style="margin:16px 0 0;display:flex;flex-wrap:wrap;gap:6px 22px;font-size:13px;color:#5c5c5c"><span>Finished <time datetime="2026-11-25T20:52:40Z" style="color:#111">25 Nov, 21:52:40</time> · 30 min ago</span><span>Trigger <b style="color:#111;font-weight:600">push</b></span><span>Attempts <b style="color:#111;font-weight:600">1</b></span></p>
+</div>
+</sc-if>
+</section>
+
+<!-- Table -->
+<section aria-labelledby="tbl-h" style="margin-top:48px;border-top:2px solid #111">
+<div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin:14px 0 12px">
+<h2 id="tbl-h" class="lbl" style="margin:0">Recent deployments</h2>
+<span style="font-size:12px;color:#5c5c5c">{{rowCount}} shown · newest first · times in your time zone</span>
+</div>
+<div style="border:1px solid #e3e3e3;border-radius:4px;overflow-x:auto">
+<table style="width:100%;border-collapse:collapse">
+<thead><tr>
+<th class="th" style="width:44px"><span style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Details</span></th>
+<th class="th">Finished</th><th class="th">Outcome</th><th class="th">Trigger</th><th class="th">Attempts</th><th class="th">Source</th><th class="th">Target</th>
+</tr></thead>
+<sc-for list="{{rows}}" as="r" hint-placeholder-count="12">
+<tbody>
+<tr class="tr">
+<td class="td" style="border-left:{{r.edge}};padding-left:10px">
+<sc-if value="{{r.hasCause}}" hint-placeholder-val="{{ false }}">
+<button class="xbtn" type="button" aria-expanded="{{r.ariaExp}}" aria-controls="{{r.cid}}" aria-label="{{r.btnLabel}}" onClick="{{r.toggle}}">
+<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true" style="transform:{{r.rot}};transition:transform 120ms ease"><path d="m4.5 2.5 3.5 3.5-3.5 3.5"/></svg>
+</button>
+</sc-if>
+</td>
+<td class="td"><time datetime="{{r.iso}}" style="color:#111;white-space:nowrap">{{r.when}}</time><div style="color:#5c5c5c;font-size:12px;margin-top:2px">{{r.ago}}</div></td>
+<td class="td">
+<sc-if value="{{r.isDeployed}}" hint-placeholder-val="{{ true }}"><span class="b" style="background:#111;color:#f2f2f2;border:1px solid #111"><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m2 6.5 2.5 2.5L10 3.5"/></svg>deployed</span></sc-if>
+<sc-if value="{{r.isUp}}" hint-placeholder-val="{{ false }}"><span class="b" style="background:#fff;color:#5c5c5c;border:1px solid #c4c4c4;font-weight:500"><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M2.5 4.5h7M2.5 7.5h7"/></svg>up to date</span></sc-if>
+<sc-if value="{{r.isRefused}}" hint-placeholder-val="{{ false }}"><span class="b" style="background:#fff;color:#111;border:1px dashed #111"><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 6h6"/></svg>refused</span></sc-if>
+<sc-if value="{{r.isFailed}}" hint-placeholder-val="{{ false }}"><span class="b" style="background:#111;color:#f2f2f2;border:2px solid #000;font-weight:700"><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 2v5"/><circle cx="6" cy="9.5" r=".6" fill="currentColor"/></svg>failed</span></sc-if>
+</td>
+<td class="td">{{r.trigger}}</td>
+<td class="td"><span style="font-weight:{{r.attW}}">{{r.attempts}}</span></td>
+<td class="td"><a href="#c">{{r.src}}</a></td>
+<td class="td"><sc-if value="{{r.hasTgt}}" hint-placeholder-val="{{ true }}"><a href="#c">{{r.tgt}}</a></sc-if><sc-if value="{{r.noTgt}}" hint-placeholder-val="{{ false }}"><span style="color:#5c5c5c">— no change</span></sc-if></td>
+</tr>
+<sc-if value="{{r.open}}" hint-placeholder-val="{{ false }}">
+<tr id="{{r.cid}}"><td colspan="7" class="td" style="border-left:{{r.edge}};background:#f6f6f6;padding:4px 14px 16px 58px">
+<div class="lbl" style="margin:10px 0 6px">Cause</div>
+<pre style="margin:0;padding:12px 14px;background:#111;color:#f2f2f2;border-radius:4px;font:400 13px/1.6 'Fira Code',monospace;white-space:pre-wrap">{{r.cause}}</pre>
+</td></tr>
+</sc-if>
+</tbody>
+</sc-for>
+</table>
+</div>
+</section>
+
+</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"lastOutcome":{"editor":"enum","options":["failed","deployed"],"default":"failed"},"serviceState":{"editor":"enum","options":["idle","running","waiting"],"default":"idle"},"$preview":{"width":1440,"height":1840}}'>
+class Component extends DCLogic {
+  constructor(p){ super(p); this.state = { open: { r5: true } }; }
+  renderVals() {
+    const sc = this.props.lastOutcome ?? 'failed';
+    const st = this.props.serviceState ?? 'idle';
+    const all = [
+      ['r1','2026-11-25T21:14:03Z','25 Nov, 22:14:03','8 min ago','failed','push',3,'a41c9e2','','git push rejected 3 times\nremote: Permission to mbero/mbero.github.io.git denied.\nfatal: Authentication failed (token expired)'],
+      ['r2','2026-11-25T20:52:40Z','25 Nov, 21:52:40','30 min ago','deployed','push',1,'7d03b1f','9f8e7d6',''],
+      ['r3','2026-11-25T20:31:12Z','25 Nov, 21:31:12','51 min ago','up_to_date','poll',1,'7d03b1f','',''],
+      ['r4','2026-11-25T19:47:55Z','25 Nov, 20:47:55','1 h ago','deployed','push',2,'c2e8a90','3b61f0c',''],
+      ['r5','2026-11-25T18:05:21Z','25 Nov, 19:05:21','3 h ago','refused','push',1,'e19d4a7','','No note carries the publish tag (#publish).\nNothing to publish. The site stays as it is.'],
+      ['r6','2026-11-25T17:58:02Z','25 Nov, 18:58:02','3 h ago','deployed','push',1,'5fa20c3','81d7e4a',''],
+      ['r7','2026-11-25T15:30:00Z','25 Nov, 16:30:00','5 h ago','up_to_date','poll',1,'5fa20c3','',''],
+      ['r8','2026-11-25T13:20:03Z','25 Nov, 14:20:03','8 h ago','deployed','poll',1,'0b9e6d1','d44c1b2',''],
+      ['r9','2026-11-25T13:12:47Z','25 Nov, 14:12:47','8 h ago','failed','push',1,'0b9e6d1','','network: could not resolve host github.com\nThe next trigger will try again.'],
+      ['r10','2026-11-25T08:41:18Z','25 Nov, 09:41:18','13 h ago','up_to_date','startup',1,'0b9e6d1','',''],
+      ['r11','2026-11-24T22:02:09Z','24 Nov, 23:02:09','yesterday','refused','push',1,'f7713ac','','Front matter error in posts/angular-signals.md:\n  missing required field "title"'],
+      ['r12','2026-11-24T20:40:33Z','24 Nov, 21:40:33','yesterday','deployed','push',1,'8a2b5e0','c90f3a7','']
+    ];
+    const src = sc === 'deployed' ? all.slice(1) : all;
+    const open = this.state.open;
+    const rows = src.map(([id, iso, when, ago, o, trigger, att, s, t, cause]) => {
+      const isOpen = !!open[id] && !!cause;
+      return {
+        id, iso, when, ago, trigger, src: s, tgt: t, cause, cid: 'cause-' + id,
+        attempts: att > 1 ? att + ' of 3' : '1', attW: att > 1 ? 700 : 400,
+        isDeployed: o === 'deployed', isUp: o === 'up_to_date', isRefused: o === 'refused', isFailed: o === 'failed',
+        hasTgt: !!t, noTgt: !t, hasCause: !!cause, open: isOpen,
+        ariaExp: isOpen ? 'true' : 'false', rot: isOpen ? 'rotate(90deg)' : 'none',
+        btnLabel: (isOpen ? 'Hide cause for ' : 'Show cause for ') + when,
+        edge: o === 'failed' ? '3px solid #000' : '3px solid transparent',
+        toggle: () => this.setState({ open: { ...this.state.open, [id]: !this.state.open[id] } })
+      };
+    });
+    return {
+      rows, rowCount: rows.length,
+      isFailed: sc === 'failed', isDeployed: sc === 'deployed',
+      stateLabel: st === 'waiting' ? 'Waiting · 1 queued' : st
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,79 @@
+{
+ "v": 3,
+ "createdOnFiles": {
+  "v": 1,
+  "at": "2026-11-25T21:23:54Z"
+ },
+ "title": "mb2e dashboard \u2014 UI proposal",
+ "launch": {
+  "view": "canvas"
+ },
+ "pages": [],
+ "boards": {
+  "Main.dc.html": {
+   "x": 0,
+   "y": 0,
+   "w": 1440,
+   "h": 1840,
+   "expand": "fill",
+   "is_interactive": true,
+   "title": "Dashboard \u2014 desktop (hi-fi)"
+  },
+  "Mobile.dc.html": {
+   "x": 1520,
+   "y": 0,
+   "w": 390,
+   "h": 2260,
+   "is_interactive": true,
+   "title": "Dashboard \u2014 narrow < 900 px (hi-fi)"
+  },
+  "SignIn.dc.html": {
+   "x": 1990,
+   "y": 0,
+   "w": 1280,
+   "h": 800,
+   "expand": "fill",
+   "title": "Sign-in (hi-fi)"
+  },
+  "AccessDenied.dc.html": {
+   "x": 1990,
+   "y": 920,
+   "w": 1280,
+   "h": 800,
+   "expand": "fill",
+   "title": "Access denied"
+  },
+  "States.dc.html": {
+   "x": 0,
+   "y": 1960,
+   "w": 1440,
+   "h": 1100,
+   "title": "Empty, loading and error states"
+  },
+  "FailedVariant.dc.html": {
+   "x": 1990,
+   "y": 1840,
+   "w": 1200,
+   "h": 760,
+   "title": "Outcome badges \u2014 monochrome vs. optional accent"
+  },
+  "Wireframes.dc.html": {
+   "x": 0,
+   "y": 3180,
+   "w": 1440,
+   "h": 1300,
+   "title": "Low-fi wireframes \u2014 all screens"
+  }
+ },
+ "order": [
+  "Main.dc.html",
+  "Mobile.dc.html",
+  "SignIn.dc.html",
+  "AccessDenied.dc.html",
+  "States.dc.html",
+  "FailedVariant.dc.html",
+  "Wireframes.dc.html"
+ ],
+ "notes": {},
+ "designSystems": []
+}
