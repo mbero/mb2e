@@ -313,7 +313,7 @@ flowchart TD
 
 ## Deploying to GitHub Pages
 
-mb2e never runs `git push`. That's on purpose: you get the last word.
+The CLI never runs `git push`. That's on purpose: you get the last word. The [server mode](#server-mode) is the one exception: it pushes to the target repository that you configure.
 
 ```mermaid
 sequenceDiagram
@@ -354,6 +354,76 @@ git -C /path/to/your-login.github.io push origin main
 
 A minute or two later, the site is live at `https://your-login.github.io`.
 
+## Server mode
+
+`java -jar target/mb2e.jar serve` starts mb2e as a long-lived service, for example in a container on a small VPS. A push to your notes repository sends a webhook. The service syncs both repositories, builds the site, and pushes it to the target repository when it changed. GitHub Pages then deploys the target branch. The CLI stays unchanged: every other argument list starts the CLI.
+
+```text
+git push -> notes repository -> POST /webhook/github -> mb2e container
+                                   1. check the HMAC signature, filter, answer 202
+                                   2. sync the notes clone and the target clone
+                                   3. build the site
+                                   4. nothing changed -> stop; else commit and push to the target
+```
+
+### Run it with Docker
+
+```bash
+cp .env.example .env        # then fill in the values; .env is git-ignored
+docker compose up -d --build
+docker compose logs -f mb2e
+curl -fsS http://127.0.0.1:8080/healthz
+docker compose stop         # waits for a run in progress, at most 75 seconds
+```
+
+The container exits with code 143 after `docker compose stop`. That is the normal code of a JVM that received SIGTERM, not an error.
+
+### Settings
+
+Settings are `MB2E_*` environment variables. A secret may come from a file: set `NAME_FILE` instead of `NAME`, never both. An unknown variable has no effect. `application_local_paths.yaml` and `SPRING_APPLICATION_JSON` do not configure the server.
+
+| Variable | Required | Default | Meaning |
+|---|---|---|---|
+| `MB2E_SOURCE_REPO_URL` | yes | | `https://github.com/<owner>/<repo>` of the notes. No credentials in the URL. |
+| `MB2E_TARGET_REPO_URL` | yes | | The repository that GitHub Pages serves. It must differ from the source. |
+| `MB2E_WEBHOOK_SECRET` | yes | | The webhook secret, at least 32 characters. |
+| `MB2E_GITHUB_TOKEN` | see below | | One fine-grained token for both repositories. |
+| `MB2E_SOURCE_TOKEN`, `MB2E_TARGET_TOKEN` | see below | | A token for each repository; each wins over `MB2E_GITHUB_TOKEN`. |
+| `MB2E_GIT_USER_NAME`, `MB2E_GIT_USER_EMAIL` | yes | | The author of the commits in the target. |
+| `MB2E_SOURCE_BRANCH`, `MB2E_TARGET_BRANCH` | no | `main` | The branches to read and to push. |
+| `MB2E_SOURCE_SUBDIR` | no | empty | The folder of the vault inside the notes repository. No `..`, no leading `/`. |
+| `MB2E_WORKSPACE` | no | `/var/lib/mb2e` | Where the two clones and the lock file live. Use one volume. |
+| `MB2E_TEMPLATE_PATH` | no | `/opt/mb2e/template/mbs-blog` | The site template inside the image. |
+| `MB2E_HTTP_PORT` | no | `8080` | The port of the web server inside the container. |
+| `MB2E_GIT_NETWORK_TIMEOUT_SECONDS` | no | `120` | The budget of one git network command, 10 to 900. |
+| `MB2E_SYNC_ON_START` | no | `true` | Run one deployment at start-up, so a missed push is caught up. |
+| `MB2E_POLL_INTERVAL_SECONDS` | no | `0` | `0` is off; otherwise 60 or more. |
+| `MB2E_WEBHOOK_MAX_BODY_BYTES` | no | `26214400` | The largest accepted webhook body. |
+| `MB2E_TAG`, `MB2E_INLINE_TAGS`, `MB2E_DEFAULT_NOTE` | no | as the CLI | The same settings as `mb2e.tag`, `mb2e.inline-tags`, `mb2e.default-note`. |
+| `MB2E_FORCE` | no | `false` | Set `true` when the target is not `<owner>/<owner>.github.io`. |
+| `MB2E_COMMIT_MESSAGE` | no | `chore(content): refresh Knowledge Hub` | One line. The body of the commit names the source commit. |
+| `MB2E_LOG_FILE` | no | empty | An extra file for the step lines and stack traces. |
+
+Tokens: set `MB2E_GITHUB_TOKEN`, or both `MB2E_SOURCE_TOKEN` and `MB2E_TARGET_TOKEN`. The token reaches git through the process environment only; it is never in a URL, an argument, `.git/config` or a log line.
+
+### Settings on GitHub, made once
+
+| Where | Setting |
+|---|---|
+| Notes repository, Settings, Webhooks | Payload URL `https://<your-host>/webhook/github`, content type `application/json`, the secret of `MB2E_WEBHOOK_SECRET`, event "Just the push event", SSL verification on. |
+| Target repository, Settings, Pages | "Deploy from a branch", the branch of `MB2E_TARGET_BRANCH`, folder `/ (root)`. |
+| Your account, Developer settings, Fine-grained tokens | Two tokens for least privilege: the notes repository with `Contents: Read-only`, the target repository with `Contents: Read and write`. |
+
+### Reverse proxy and limits
+
+- The service speaks plain HTTP. Put a reverse proxy with TLS in front of it; the compose file binds the port to `127.0.0.1` only. TLS and rate limits are not part of mb2e.
+- Run exactly one container for one volume. A file lock (`.mb2e.lock`) refuses a second service on the same workspace.
+- `GET /healthz` answers `200` with the last outcome (`deployed`, `up_to_date`, `refused` or `failed`). A failed or refused run does not make the service `down`: a restart does not fix a wrong note or an expired token. Read the `step=deploy` lines in the log: each one names the trigger and, for a failure, the cause.
+- A push that arrives while the service stops gets `503`; the start-up run of the next start catches it up.
+- A burst of pushes gives at most two runs. A rejected push is retried from a fresh sync, three times at most, and is never forced.
+- Git LFS is not supported. If the notes repository stores images with Git LFS, the clone holds pointer files and the published images do not load.
+- Failure notifications are not built in. Watch the log and `/healthz`.
+
 ## Safety nets
 
 - **The vault and the template are read-only.** mb2e never writes to them, and `build` writes nothing at all.
@@ -374,13 +444,15 @@ A minute or two later, the site is live at `https://your-login.github.io`.
 
 ## Under the hood
 
-mb2e uses Spring Boot and Spring Shell with a hexagonal architecture. The domain knows nothing about the filesystem or git: it gets both through ports in `domain.port.out`, and the shell commands call use cases in `domain.port.in`.
+mb2e uses Spring Boot and Spring Shell with a hexagonal architecture. The server mode adds a web adapter around the same engine. The domain knows nothing about the filesystem or git: it gets both through ports in `domain.port.out`, and the shell commands call use cases in `domain.port.in`.
 
 ```
 io.github.mbero.mb2e
 ├── adapter.in.shell        commands: build, publish, run, usage, help
+├── adapter.in.log          one structured log line per step
+├── adapter.in.web          server mode: webhook, health, deploy queue
 ├── adapter.out.persistence files: vault, template, Pages repo
-├── adapter.out.external    the git program (reads only)
+├── adapter.out.external    the git program: a read-only view for the CLI, clones that can push for the server
 ├── domain
 │   ├── model               notes, reports, the assembled site
 │   ├── port.in / port.out  contracts

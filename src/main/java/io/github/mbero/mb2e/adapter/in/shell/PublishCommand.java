@@ -1,5 +1,6 @@
 package io.github.mbero.mb2e.adapter.in.shell;
 
+import io.github.mbero.mb2e.adapter.in.log.StepLog;
 import io.github.mbero.mb2e.domain.model.PublishReport;
 import io.github.mbero.mb2e.domain.port.in.PublishUseCase;
 import java.util.List;

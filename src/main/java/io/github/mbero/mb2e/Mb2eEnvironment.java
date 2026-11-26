@@ -17,6 +17,10 @@ final class Mb2eEnvironment extends StandardEnvironment {
 
     static final String JSON_VARIABLE = "SPRING_APPLICATION_JSON";
     static final String PREFIX = "mb2e.";
+    /** Property that selects the mode of the run; only this class sets it, so no other source can. */
+    static final String MODE = "mb2e.mode";
+    static final String CLI_MODE = "cli";
+    static final String SERVER_MODE = "server";
     /** Variable that names the local paths file; unset means the file in the working directory. */
     static final String LOCAL_FILE_VARIABLE = "MB2E_CONFIG";
     static final String LOCAL_FILE = "application_local_paths.yaml";
@@ -46,6 +50,40 @@ final class Mb2eEnvironment extends StandardEnvironment {
      * {@code MB2E_CONFIG} value; either may be null or blank when unset.
      */
     static Mb2eEnvironment create(String json, String localFile) {
+        // The packaged file, then the optional local paths file, which wins over it.
+        String local = localFile == null || localFile.isBlank() ? LOCAL_FILE : localFile;
+        Map<String, Object> fixed = new LinkedHashMap<>();
+        fixed.put(MODE, CLI_MODE);
+        fixed.put("spring.config.location", "classpath:/application.yaml,optional:file:" + local);
+        return build(json, fixed);
+    }
+
+    /**
+     * Creates the environment of the server mode: the packaged file only, the validated server
+     * properties, and the fixed properties of the web server. The server mode never reads the local paths file.
+     * <p>Spring Shell stays on the classpath; its runners are switched off so that no terminal is read.
+     */
+    static Mb2eEnvironment forServer(String json, Map<String, Object> serverProperties) {
+        Map<String, Object> fixed = new LinkedHashMap<>(serverProperties);
+        fixed.put(MODE, SERVER_MODE);
+        fixed.put("spring.config.location", "classpath:/application.yaml");
+        fixed.put("spring.main.web-application-type", "servlet");
+        fixed.put("spring.shell.interactive.enabled", false);
+        fixed.put("spring.shell.noninteractive.enabled", false);
+        fixed.put("spring.shell.script.enabled", false);
+        fixed.put("server.tomcat.threads.max", 4);
+        fixed.put("server.tomcat.accept-count", 16);
+        fixed.put("server.shutdown", "graceful");
+        fixed.put("spring.lifecycle.timeout-per-shutdown-phase", "60s");
+        fixed.put("server.error.whitelabel.enabled", false);
+        fixed.put("server.error.include-stacktrace", "never");
+        fixed.put("server.error.include-message", "never");
+        fixed.put("logging.level.io.github.mbero.mb2e", "info");
+        fixed.put("logging.level.mb2e.step", "info");
+        return build(json, fixed);
+    }
+
+    private static Mb2eEnvironment build(String json, Map<String, Object> fixed) {
         Map<String, Object> properties = new LinkedHashMap<>();
         if (json != null && !json.isBlank()) {
             Map<String, Object> parsed;
@@ -61,12 +99,8 @@ final class Mb2eEnvironment extends StandardEnvironment {
                 }
             }
         }
-        // The packaged file, then the optional local paths file, which wins over it.
-        String local = localFile == null || localFile.isBlank() ? LOCAL_FILE : localFile;
-        Map<String, Object> fixed = new LinkedHashMap<>();
-        fixed.put("spring.config.location", "classpath:/application.yaml,optional:file:" + local);
         Mb2eEnvironment environment = new Mb2eEnvironment();
-        // The JSON keys outrank the packaged file; the fixed location outranks both.
+        // The JSON keys outrank the packaged file; the fixed properties outrank both.
         environment.getPropertySources().addLast(new MapPropertySource(JSON_VARIABLE, properties));
         environment.getPropertySources().addFirst(new MapPropertySource("mb2e-fixed", fixed));
         return environment;

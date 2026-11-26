@@ -2,6 +2,8 @@ spring:
   main:
     # banner-mode is set in Mb2eApplication: the logo shows in the interactive shell only.
     log-startup-info: false
+    # The CLI starts no web server. The server mode sets the servlet type in Mb2eEnvironment.forServer.
+    web-application-type: none
   shell:
     # Spring Shell's built-in commands and its --help option are removed in code
     # (Mb2eApplication, ShellConfig), not switched off here, so no property in
@@ -30,6 +32,8 @@ mb2e:
   default-note: about
   # Relaxes the remote check of the target into a warning.
   force: false
+  # The message of the commit that publish lists for the target repository.
+  commit-message: "chore(content): refresh Knowledge Hub"
   log:
     # Optional file that also receives each step line and the stack trace of a failure. Empty = off.
     file: ""

@@ -1,6 +1,7 @@
-package io.github.mbero.mb2e.adapter.in.shell;
+package io.github.mbero.mb2e.adapter.in.log;
 
 import io.github.mbero.mb2e.domain.model.BuildReport;
+import io.github.mbero.mb2e.domain.model.DeployReport;
 import io.github.mbero.mb2e.domain.model.PublishReport;
 import io.github.mbero.mb2e.domain.model.RunReport;
 import io.github.mbero.mb2e.domain.model.StepResult;
@@ -59,6 +60,25 @@ public class StepLog {
                         + report.mediaDeletedCount() + " mediaMissing=" + report.missingMediaCount());
     }
 
+    /** Logs the outcome of one deployment with its attempts and the commits it used. */
+    public void deploy(DeployReport report) {
+        String detail = report.detail() == null ? "" : " detail=\"" + oneLine(report.detail()) + "\"";
+        LOG.info("step=deploy outcome=" + report.outcome() + " traceId=" + report.traceId() + " reason=\""
+                + oneLine(report.reason()) + "\" attempts=" + report.attempts() + " sourceCommit="
+                + commit(report.sourceCommit()) + " targetCommit=" + commit(report.targetCommit())
+                + (report.title() == null ? "" : " title=\"" + oneLine(report.title()) + "\"") + detail);
+        append("step=deploy outcome=" + report.outcome() + " traceId=" + report.traceId() + detail);
+    }
+
+    /** Keeps a text on one log line: line breaks become spaces and double quotes become single quotes. */
+    private static String oneLine(String text) {
+        return text == null ? "" : text.replaceAll("[\\r\\n]+", " ").replace('"', '\'').strip();
+    }
+
+    private static String commit(String id) {
+        return id == null || id.isBlank() ? "-" : id;
+    }
+
     /** Logs the two steps of a run; a step that did not happen shows as skipped or not_run. */
     public void run(RunReport report) {
         step("build", report.build(), report.traceId());
@@ -79,11 +99,17 @@ public class StepLog {
     public void failure(String step, Throwable failure) {
         String traceId = UUID.randomUUID().toString();
         String line = "step=" + step + " outcome=failed traceId=" + traceId + " error="
-                + RefusalReporter.describe(failure);
+                + describe(failure);
         LOG.info(line);
         StringWriter trace = new StringWriter();
         failure.printStackTrace(new PrintWriter(trace));
         append(line + System.lineSeparator() + trace);
+    }
+
+    /** Returns the failure message, or its simple class name when the message is blank. */
+    private static String describe(Throwable failure) {
+        String message = failure.getMessage();
+        return message == null || message.isBlank() ? failure.getClass().getSimpleName() : message;
     }
 
     private void line(String step, String outcome, String traceId, String title, String detail, String counts) {

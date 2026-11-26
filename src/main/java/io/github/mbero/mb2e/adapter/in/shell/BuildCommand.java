@@ -1,5 +1,6 @@
 package io.github.mbero.mb2e.adapter.in.shell;
 
+import io.github.mbero.mb2e.adapter.in.log.StepLog;
 import io.github.mbero.mb2e.domain.model.BuildReport;
 import io.github.mbero.mb2e.domain.port.in.BuildUseCase;
 import org.springframework.shell.command.CommandContext;

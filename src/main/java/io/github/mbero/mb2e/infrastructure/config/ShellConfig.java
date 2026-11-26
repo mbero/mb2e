@@ -8,13 +8,13 @@ import io.github.mbero.mb2e.adapter.in.shell.OneShotRunner;
 import io.github.mbero.mb2e.adapter.in.shell.PublishCommand;
 import io.github.mbero.mb2e.adapter.in.shell.RefusalReporter;
 import io.github.mbero.mb2e.adapter.in.shell.RunCommand;
-import io.github.mbero.mb2e.adapter.in.shell.StepLog;
 import io.github.mbero.mb2e.adapter.in.shell.UsageCommand;
 import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.RootBeanDefinition;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.shell.Shell;
 import org.springframework.shell.context.ShellContext;
 import org.springframework.context.annotation.Bean;
@@ -26,8 +26,11 @@ import org.springframework.shell.result.GenericResultHandlerService;
  * Registers the mb2e shell commands and sends refusals to standard error.
  * <p>Every Spring Shell built-in command and the {@code --help} option are removed, so only
  * help, usage, exit and the mb2e commands remain; no property can bring the others back.
+ * <p>The configuration applies in the {@code cli} mode only. The launcher sets {@code mb2e.mode=cli};
+ * a context that sets no mode is a {@code cli} context.
  */
 @Configuration(proxyBeanMethods = false)
+@ConditionalOnProperty(name = "mb2e.mode", havingValue = "cli", matchIfMissing = true)
 @EnableCommand({UsageCommand.class, HelpCommand.class, ExitCommand.class, BuildCommand.class, PublishCommand.class,
         RunCommand.class})
 public class ShellConfig {
@@ -63,12 +66,6 @@ public class ShellConfig {
     @Bean
     OneShotRunner oneShotRunner(Shell shell, ShellContext shellContext) {
         return new OneShotRunner(shell, shellContext);
-    }
-
-    /** One structured line per step on standard error, and the optional log file. */
-    @Bean
-    StepLog stepLog(Mb2eProperties properties) {
-        return new StepLog(properties.log().file());
     }
 
     @Bean

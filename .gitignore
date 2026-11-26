@@ -4,6 +4,7 @@ target/
 .vscode/
 .DS_Store
 application_local_paths.yaml
+.env
 
 # Knowledge base for AI agents; kept local for now
 AGENTS.md

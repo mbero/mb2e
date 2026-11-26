@@ -1,0 +1,15 @@
+target/
+.git/
+.idea/
+.vscode/
+docs/
+.agents/
+.claude/
+bootstrap/
+profiles/
+application_local_paths.yaml
+.env
+*.iml
+.DS_Store
+# A local note beside the template; it is not part of the published site.
+src/main/resources/template/mbs-blog/README.md

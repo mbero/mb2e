@@ -38,7 +38,6 @@ public class PublishService implements PublishUseCase {
     private static final String DATA_SCRIPT = "assets/js/data.js";
     private static final String STALE_DATASOURCE = "datasource";
     private static final String DS_STORE = ".DS_Store";
-    private static final String COMMIT_MESSAGE = "chore(content): refresh Knowledge Hub";
 
     private final BuildUseCase build;
     private final VaultReader vault;
@@ -47,9 +46,10 @@ public class PublishService implements PublishUseCase {
     private final GitRepository git;
     private final ConfiguredPaths paths;
     private final boolean force;
+    private final String commitMessage;
 
     public PublishService(BuildUseCase build, VaultReader vault, SiteSource site, PublishTarget target,
-            GitRepository git, ConfiguredPaths paths, boolean force) {
+            GitRepository git, ConfiguredPaths paths, boolean force, String commitMessage) {
         this.build = build;
         this.vault = vault;
         this.site = site;
@@ -57,6 +57,7 @@ public class PublishService implements PublishUseCase {
         this.git = git;
         this.paths = paths;
         this.force = force;
+        this.commitMessage = commitMessage;
     }
 
     /** What a publication will do, complete before anything is done. */
@@ -311,8 +312,13 @@ public class PublishService implements PublishUseCase {
     private List<String> commands(String branch) {
         String directory = shellWord(target.location());
         return List.of("git -C " + directory + " add -A",
-                "git -C " + directory + " commit -m \"" + COMMIT_MESSAGE + "\"",
+                "git -C " + directory + " commit -m \"" + insideDoubleQuotes(commitMessage) + "\"",
                 "git -C " + directory + " push origin " + branch);
+    }
+
+    /** Escapes the four characters that a shell still reads inside double quotes, so the text stays literal. */
+    private static String insideDoubleQuotes(String text) {
+        return text.replace("\\", "\\\\").replace("\"", "\\\"").replace("$", "\\$").replace("`", "\\`");
     }
 
     /** The path as typed, quoted only when a shell would split or expand it. */

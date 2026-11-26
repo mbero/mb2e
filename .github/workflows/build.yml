@@ -1,0 +1,26 @@
+name: build
+
+# Builds and tests the jar and the image on a pull request. It uses no repository secret.
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      LANG: C.UTF-8
+      LC_ALL: C.UTF-8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: maven
+      - name: Build and test
+        run: mvn -q -B clean verify
+      - name: Build the image
+        run: docker build -t mb2e:ci .

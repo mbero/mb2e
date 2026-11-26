@@ -8,3 +8,5 @@ mb2e:
     path: "/path/to/your-login.github.io"
   # Optional: the tag that selects a note (default: blog-ready).
   # tag: blog-ready
+  # Optional: the commit message in the git command that the publish report prints.
+  # commit-message: "chore(content): refresh Knowledge Hub"
