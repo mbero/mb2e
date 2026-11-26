@@ -88,6 +88,7 @@ True on 2026-11-13.
 ## Continuous integration
 
 - `.github/workflows/knowledge-base.yml` runs `bootstrap/check.sh` on a pull request and on a push to `main`.
+- `.github/workflows/dashboard-ui.yml` runs the UI tests and the UI build on a change under `ui/`.
 - No workflow builds or tests the Java code.
 
 ## What could not be verified
