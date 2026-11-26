@@ -138,6 +138,9 @@ class DashboardLoginEndToEndTest {
         env.put("MB2E_DASHBOARD_ALLOWED_LOGIN", "Me");
         env.put("MB2E_DASHBOARD_OAUTH_CLIENT_ID", CLIENT_ID);
         env.put("MB2E_DASHBOARD_OAUTH_CLIENT_SECRET", CLIENT_SECRET);
+        Path ui = java.nio.file.Files.createDirectories(temp.resolve("ui"));
+        java.nio.file.Files.writeString(ui.resolve("index.html"), "<mb-root></mb-root>");
+        env.put("MB2E_DASHBOARD_FILES", ui.toString());
         Map<String, Object> properties = new HashMap<>(ServerEnvironment.properties(env, path -> null));
         properties.put("mb2e.server.dashboard.github-url", githubUrl);
         properties.put("mb2e.server.dashboard.github-api-url", githubUrl);
@@ -220,6 +223,16 @@ class DashboardLoginEndToEndTest {
         assertThat(token).isNotBlank();
         assertThat(browser.post("/api/logout", Map.of("X-XSRF-TOKEN", token)).statusCode()).isEqualTo(204);
         assertThat(browser.get("/api/me").statusCode()).isEqualTo(401);
+    }
+
+    @Test
+    void theUiShellIsPublicAndHandsOutTheCsrfCookieTheLogoutNeeds() throws Exception {
+        Browser browser = new Browser();
+        HttpResponse<String> page = browser.get("/dashboard/denied?login=x");
+        assertThat(page.statusCode()).isEqualTo(200);
+        assertThat(page.body()).isEqualTo("<mb-root></mb-root>");
+        assertThat(browser.cookies.get("XSRF-TOKEN")).isNotBlank();
+        assertThat(browser.get("/dashboard/missing-ABCDEFGH.js").statusCode()).isEqualTo(404);
     }
 
     @Test

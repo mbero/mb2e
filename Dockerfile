@@ -1,3 +1,12 @@
+# UI stage: build the dashboard. Only the image needs Node; the Maven build and the jar stay free of it.
+FROM node:22-bookworm-slim AS ui
+ENV NG_CLI_ANALYTICS=false
+WORKDIR /ui
+COPY ui/package.json ui/package-lock.json ./
+RUN npm ci --no-audit --no-fund
+COPY ui ./
+RUN npx ng build
+
 # Build stage: compile and package the jar. Tests run in CI and locally, not in the image build.
 FROM maven:3.9-eclipse-temurin-25 AS build
 WORKDIR /build
@@ -17,6 +26,8 @@ RUN useradd --uid 10001 --create-home --shell /usr/sbin/nologin mb2e \
     && chown mb2e /var/lib/mb2e
 COPY --from=build /build/target/mb2e.jar /opt/mb2e/mb2e.jar
 COPY src/main/resources/template/mbs-blog /opt/mb2e/template/mbs-blog
+COPY --from=ui /ui/dist/mb2e-dashboard/browser /opt/mb2e/dashboard
+RUN chmod -R a+rX /opt/mb2e/dashboard
 USER mb2e
 VOLUME /var/lib/mb2e
 EXPOSE 8080

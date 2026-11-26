@@ -20,6 +20,7 @@ public record ServerProperties(
 
     /** The default of each setting that the launcher also needs; one literal for both. */
     public static final String DEFAULT_WORKSPACE = "/var/lib/mb2e";
+    public static final String DEFAULT_DASHBOARD_FILES = "/opt/mb2e/dashboard";
     public static final String DEFAULT_BRANCH = "main";
     public static final String DEFAULT_MAX_BODY_BYTES = "26214400";
     public static final String DEFAULT_NETWORK_TIMEOUT_SECONDS = "120";
@@ -38,12 +39,13 @@ public record ServerProperties(
     }
 
     /**
-     * The dashboard login: the one GitHub login that may sign in and the OAuth App. The two GitHub
-     * addresses have fixed defaults; only a test points them at a fake server.
+     * The dashboard: the one GitHub login that may sign in, the OAuth App and the folder of the built UI.
+     * The two GitHub addresses have fixed defaults; only a test points them at a fake server.
      */
     public record Dashboard(@DefaultValue("false") boolean enabled, String allowedLogin, String clientId,
             Secret clientSecret, @DefaultValue("https://github.com") String githubUrl,
-            @DefaultValue("https://api.github.com") String githubApiUrl) {
+            @DefaultValue("https://api.github.com") String githubApiUrl,
+            @DefaultValue(DEFAULT_DASHBOARD_FILES) String files) {
     }
 
     /** The author of the target commits and the time budget of a network command. */

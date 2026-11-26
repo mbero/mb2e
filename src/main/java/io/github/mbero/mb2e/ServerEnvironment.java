@@ -126,6 +126,7 @@ final class ServerEnvironment {
         out.put("mb2e.server.dashboard.allowed-login", login);
         out.put("mb2e.server.dashboard.client-id", clientId);
         out.put("mb2e.server.dashboard.client-secret", clientSecret);
+        out.put("mb2e.server.dashboard.files", absolute("MB2E_DASHBOARD_FILES", ServerProperties.DEFAULT_DASHBOARD_FILES));
     }
 
     private static Mb2eEnvironment.Refused refused(String message) {

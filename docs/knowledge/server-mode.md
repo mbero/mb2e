@@ -9,6 +9,8 @@ sources:
   - src/main/java/io/github/mbero/mb2e/adapter/in/web/GithubWebhookController.java
   - src/main/java/io/github/mbero/mb2e/adapter/in/web/DeployQueue.java
   - src/main/java/io/github/mbero/mb2e/adapter/in/web/DashboardApiController.java
+  - src/main/java/io/github/mbero/mb2e/adapter/in/web/DashboardFiles.java
+  - Dockerfile
   - src/main/java/io/github/mbero/mb2e/adapter/out/persistence/SqliteDeploymentHistory.java
   - src/main/java/io/github/mbero/mb2e/infrastructure/config/DashboardSecurityConfig.java
   - src/test/java/io/github/mbero/mb2e/DashboardLoginEndToEndTest.java
@@ -49,6 +51,7 @@ Other facts:
 - The endpoints are plain classes routed by `WebRoutes`; another method or path gets `404`. A push during shutdown gets `503`.
 - Dashboard API (read-only): `GET /api/status` (state `idle`/`running`/`waiting`, uptime, repositories, site URL, `maxAttempts`) and `GET /api/deployments?limit=1..500` (default 50, newest first). A failure cause shows `<local path>` in place of the workspace or template path.
 - The dashboard exists only when `MB2E_DASHBOARD_ALLOWED_LOGIN`, `MB2E_DASHBOARD_OAUTH_CLIENT_ID` and `MB2E_DASHBOARD_OAUTH_CLIENT_SECRET` are all set; a partial set is refused at start. Without them the server starts no web security and `/api/*` answers `404`.
+- UI: the image builds `ui/` in a Node stage and copies the result to `/opt/mb2e/dashboard` (`MB2E_DASHBOARD_FILES`). `DashboardFiles` serves it under `/dashboard/`: a path without a file extension gets `index.html`, a missing or unreadable asset or a path outside the folder gets `404`. Hashed bundles are cached for a year, `index.html` never. The shell is public; it holds no data. Without a built UI the server logs one warning and `/dashboard/` answers `404`. The jar and the Maven build contain no Node and no UI files.
 - Login: GitHub OAuth with no scope, for one login (case-insensitive). The GitHub token is dropped after the user name is read (`DiscardedClientRepository`). Another account is redirected to `/dashboard/denied?login=...` and gets no session.
 - Session cookie `mb2e_session`: `HttpOnly`, `Secure`, `SameSite=Lax`, idle limit 30 minutes, total limit 12 hours (`SessionLifetimeFilter`). Lax, not Strict: GitHub's redirect back to `/login/oauth2/code/github` is a cross-site navigation, and a Strict cookie would lose the login state.
 - `/api/*` without a session answers `401 {"error":"Sign in first."}`. `POST /api/logout` needs the `XSRF-TOKEN` cookie value in the `X-XSRF-TOKEN` header and answers `204`. The webhook and `/healthz` stay outside the login.

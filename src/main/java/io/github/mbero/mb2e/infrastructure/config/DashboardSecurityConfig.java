@@ -3,6 +3,7 @@ package io.github.mbero.mb2e.infrastructure.config;
 import io.github.mbero.mb2e.adapter.in.log.StepLog;
 import io.github.mbero.mb2e.adapter.in.web.CsrfCookieFilter;
 import io.github.mbero.mb2e.adapter.in.web.DashboardApiController;
+import io.github.mbero.mb2e.adapter.in.web.DashboardFiles;
 import io.github.mbero.mb2e.adapter.in.web.DashboardSettings;
 import io.github.mbero.mb2e.adapter.in.web.DeployQueue;
 import io.github.mbero.mb2e.adapter.in.web.DiscardedClientRepository;
@@ -11,10 +12,12 @@ import io.github.mbero.mb2e.adapter.in.web.OwnerOnlyUserService;
 import io.github.mbero.mb2e.adapter.in.web.SessionLifetimeFilter;
 import io.github.mbero.mb2e.adapter.in.web.WebRoutes;
 import io.github.mbero.mb2e.domain.port.out.DeploymentHistory;
+import java.nio.file.Path;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.Objects;
 import java.util.stream.Stream;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -59,6 +62,17 @@ public class DashboardSecurityConfig {
     @Bean
     RouterFunction<ServerResponse> dashboardRoutes(DashboardApiController api) {
         return WebRoutes.dashboard(api);
+    }
+
+    /** The built UI; without it the API still works and {@code /dashboard/} answers 404. */
+    @Bean
+    RouterFunction<ServerResponse> dashboardFiles(ServerProperties properties) {
+        DashboardFiles files = new DashboardFiles(Path.of(properties.dashboard().files()));
+        if (!files.present()) {
+            LoggerFactory.getLogger(DashboardSecurityConfig.class)
+                    .warn("No built dashboard UI in MB2E_DASHBOARD_FILES; /dashboard/ answers 404.");
+        }
+        return files.routes();
     }
 
     /** The GitHub OAuth App with no scope: the public profile is enough to read the login. */

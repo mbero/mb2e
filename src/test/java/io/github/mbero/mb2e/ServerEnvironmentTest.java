@@ -213,7 +213,20 @@ class ServerEnvironmentTest {
         assertThat(p).containsEntry("mb2e.server.dashboard.enabled", true)
                 .containsEntry("mb2e.server.dashboard.allowed-login", "my-login")
                 .containsEntry("mb2e.server.dashboard.client-id", "id-1")
-                .containsEntry("mb2e.server.dashboard.client-secret", "oauth-secret");
+                .containsEntry("mb2e.server.dashboard.client-secret", "oauth-secret")
+                .containsEntry("mb2e.server.dashboard.files", "/opt/mb2e/dashboard");
+    }
+
+    @Test
+    void theFolderOfTheBuiltUiMustBeAnAbsolutePath() {
+        Map<String, String> env = complete();
+        env.put("MB2E_DASHBOARD_ALLOWED_LOGIN", "me");
+        env.put("MB2E_DASHBOARD_OAUTH_CLIENT_ID", "id");
+        env.put("MB2E_DASHBOARD_OAUTH_CLIENT_SECRET", "s");
+        env.put("MB2E_DASHBOARD_FILES", "/srv/ui/../dashboard");
+        assertThat(properties(env)).containsEntry("mb2e.server.dashboard.files", "/srv/dashboard");
+        env.put("MB2E_DASHBOARD_FILES", "ui/dist");
+        assertThatThrownBy(() -> properties(env)).hasMessageContaining("MB2E_DASHBOARD_FILES must be an absolute path");
     }
 
     @Test
