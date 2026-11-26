@@ -23,7 +23,7 @@ Open a document only when its title matches the question.
 | [`context/glossary.md`](context/glossary.md) | Glossary | context | draft | 2026-11-25 |
 | [`context/local-setup.md`](context/local-setup.md) | Local setup | context | draft | 2026-11-13 |
 | [`context/overview.md`](context/overview.md) | Project overview | context | draft | 2026-11-25 |
-| [`context/toolchain.md`](context/toolchain.md) | Toolchain | context | draft | 2026-11-13 |
+| [`context/toolchain.md`](context/toolchain.md) | Toolchain | context | draft | 2026-11-26 |
 | [`decisions/0001-record-architecture-decisions.md`](decisions/0001-record-architecture-decisions.md) | Record architecture decisions | decision | current | 2026-11-06 |
 | [`decisions/0002-server-mode-in-the-same-artifact.md`](decisions/0002-server-mode-in-the-same-artifact.md) | Run the server mode from the same jar and separate the modes with a property | decision | current | 2026-11-25 |
 | [`decisions/0003-deploy-by-git-clones-and-the-git-program.md`](decisions/0003-deploy-by-git-clones-and-the-git-program.md) | Deploy with two shallow clones and the git program | decision | current | 2026-11-25 |
