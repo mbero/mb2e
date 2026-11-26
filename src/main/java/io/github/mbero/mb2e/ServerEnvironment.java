@@ -71,6 +71,7 @@ final class ServerEnvironment {
         out.put("mb2e.server.source.subdir", subdir);
         out.put("mb2e.server.source.token", sourceToken);
         out.put("mb2e.server.target.url", targetUrl);
+        out.put("mb2e.server.target.repository", identity(targetUrl));
         out.put("mb2e.server.target.branch", branch("MB2E_TARGET_BRANCH"));
         out.put("mb2e.server.target.token", targetToken);
         out.put("mb2e.server.webhook.secret", webhook);

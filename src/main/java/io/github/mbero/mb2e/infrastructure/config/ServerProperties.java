@@ -28,8 +28,8 @@ public record ServerProperties(
             @DefaultValue("") String subdir, Secret token) {
     }
 
-    /** The repository that GitHub Pages serves. */
-    public record Target(String url, @DefaultValue(DEFAULT_BRANCH) String branch, Secret token) {
+    /** The repository that GitHub Pages serves; {@code repository} is its {@code owner/name}. */
+    public record Target(String url, String repository, @DefaultValue(DEFAULT_BRANCH) String branch, Secret token) {
     }
 
     /** The webhook endpoint. */

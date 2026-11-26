@@ -39,7 +39,7 @@ written convention existed before this file. Java paths are below
 | Exception | Ends with `Failure` or `Refusal`, extends `RuntimeException` | `StoreFailure`, `GitFailure`, `ShellRefusal` |
 | Test class | `<ClassUnderTest>Test`, package-private | `RemoteGuardTest` |
 | Test method | A camelCase sentence that states the behaviour | `aMissingVaultIsRefusedAndNamesThePath` |
-| Database table | n/a. No database exists. | |
+| Database table | Plural snake_case noun; columns in snake_case | `deployments`, `finished_at` |
 | Configuration key | `mb2e.<kebab-case>` | `mb2e.default-note`, `mb2e.vault.path` |
 
 ## Package structure

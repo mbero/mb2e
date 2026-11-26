@@ -1,6 +1,8 @@
 package io.github.mbero.mb2e.infrastructure.config;
 
 import io.github.mbero.mb2e.adapter.in.log.StepLog;
+import io.github.mbero.mb2e.adapter.in.web.DashboardApiController;
+import io.github.mbero.mb2e.adapter.in.web.DashboardSettings;
 import io.github.mbero.mb2e.adapter.in.web.DeployQueue;
 import io.github.mbero.mb2e.adapter.in.web.GithubWebhookController;
 import io.github.mbero.mb2e.adapter.in.web.HealthController;
@@ -9,12 +11,17 @@ import io.github.mbero.mb2e.adapter.in.web.WebRoutes;
 import io.github.mbero.mb2e.adapter.in.web.WebhookSettings;
 import io.github.mbero.mb2e.adapter.out.external.GitCredentials;
 import io.github.mbero.mb2e.adapter.out.external.GitWorkspaceProgram;
+import io.github.mbero.mb2e.adapter.out.persistence.SqliteDeploymentHistory;
 import io.github.mbero.mb2e.domain.port.in.DeployUseCase;
 import io.github.mbero.mb2e.domain.port.in.PipelineUseCase;
+import io.github.mbero.mb2e.domain.port.out.DeploymentHistory;
 import io.github.mbero.mb2e.domain.port.out.GitWorkspace;
 import io.github.mbero.mb2e.domain.service.DeployService;
 import java.nio.file.Path;
+import java.time.Clock;
 import java.time.Duration;
+import java.util.Objects;
+import java.util.stream.Stream;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
@@ -26,8 +33,8 @@ import org.springframework.web.servlet.function.RouterFunction;
 import org.springframework.web.servlet.function.ServerResponse;
 
 /**
- * Beans of the server mode: the workspace lock, the two git clones, the deploy use case, the queue and the
- * triggers. Only this configuration creates a {@link GitWorkspace}, so the CLI cannot push.
+ * Beans of the server mode: the workspace lock, the two git clones, the deploy use case, the queue, the
+ * triggers and the deployment history. Only this configuration creates a {@link GitWorkspace}, so the CLI cannot push.
  */
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnProperty(name = "mb2e.mode", havingValue = "server")
@@ -37,6 +44,8 @@ public class ServerConfig {
     private static final Duration LOCAL_BUDGET = Duration.ofSeconds(30);
     private static final int ATTEMPTS = 3;
     private static final Duration SHUTDOWN_WAIT = Duration.ofSeconds(60);
+    /** The history file lives on the workspace volume, next to the two clones, so it survives a restart. */
+    private static final String HISTORY_FILE = "history.db";
 
     @Bean(destroyMethod = "close")
     WorkspaceLock workspaceLock(ServerProperties properties) {
@@ -72,8 +81,14 @@ public class ServerConfig {
     }
 
     @Bean
-    DeployQueue deployQueue(DeployUseCase deploy, StepLog log) {
-        return new DeployQueue(deploy, log, SHUTDOWN_WAIT);
+    DeploymentHistory deploymentHistory(ServerProperties properties, WorkspaceLock lock) {
+        return new SqliteDeploymentHistory(Path.of(properties.workspace(), HISTORY_FILE),
+                DashboardApiController.MAX_LIMIT);
+    }
+
+    @Bean
+    DeployQueue deployQueue(DeployUseCase deploy, DeploymentHistory history, StepLog log) {
+        return new DeployQueue(deploy, history, log, SHUTDOWN_WAIT);
     }
 
     @Bean
@@ -93,8 +108,18 @@ public class ServerConfig {
     }
 
     @Bean
-    RouterFunction<ServerResponse> webRoutes(GithubWebhookController webhook, HealthController health) {
-        return WebRoutes.of(webhook, health);
+    DashboardApiController dashboardApiController(DeployQueue queue, DeploymentHistory history,
+            ServerProperties properties, Mb2eProperties mb2e, StepLog log) {
+        DashboardSettings settings = new DashboardSettings(properties.source().repository(),
+                properties.target().repository(), ATTEMPTS,
+                Stream.of(properties.workspace(), mb2e.template().path()).filter(Objects::nonNull).toList());
+        return new DashboardApiController(queue::state, history, settings, Clock.systemUTC(), log);
+    }
+
+    @Bean
+    RouterFunction<ServerResponse> webRoutes(GithubWebhookController webhook, HealthController health,
+            DashboardApiController dashboard) {
+        return WebRoutes.of(webhook, health).and(WebRoutes.dashboard(dashboard));
     }
 
     /** Runs one deployment at start-up, so a push that arrived while the service was down is caught up. */

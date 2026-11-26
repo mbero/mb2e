@@ -4,7 +4,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.github.mbero.mb2e.adapter.in.log.StepLog;
 import io.github.mbero.mb2e.domain.model.DeployReport;
+import io.github.mbero.mb2e.domain.model.Deployment;
 import io.github.mbero.mb2e.domain.port.in.DeployUseCase;
+import io.github.mbero.mb2e.domain.port.out.DeploymentHistory;
+import io.github.mbero.mb2e.domain.port.out.StoreFailure;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -23,6 +26,23 @@ class DeployQueueTest {
     private final List<String> reasons = Collections.synchronizedList(new ArrayList<>());
     private boolean blockFirst = true;
     private volatile RuntimeException failure;
+    private final List<Deployment> recorded = Collections.synchronizedList(new ArrayList<>());
+    private volatile boolean historyBroken;
+
+    private final DeploymentHistory history = new DeploymentHistory() {
+        @Override
+        public void record(Deployment deployment) {
+            if (historyBroken) {
+                throw new StoreFailure("disk full", null);
+            }
+            recorded.add(deployment);
+        }
+
+        @Override
+        public List<Deployment> newest(int limit) {
+            return List.copyOf(recorded);
+        }
+    };
 
     private final DeployUseCase fake = reason -> {
         if (running.incrementAndGet() > 1) {
@@ -49,7 +69,7 @@ class DeployQueueTest {
     };
 
     private DeployQueue queue() {
-        return new DeployQueue(fake, new StepLog(""), Duration.ofSeconds(10));
+        return new DeployQueue(fake, history, new StepLog(""), Duration.ofSeconds(10));
     }
 
     @Test
@@ -134,6 +154,60 @@ class DeployQueueTest {
         }).start();
         queue.destroy();
         assertThat(reasons).containsExactly("current");
+    }
+
+    @Test
+    void eachFinishedRunGoesToTheHistoryWithItsTrigger() throws Exception {
+        blockFirst = false;
+        DeployQueue queue = queue();
+        queue.submit("push abc delivery d-1");
+        awaitRecorded(1);
+        queue.submit("poll");
+        awaitRecorded(2);
+        queue.destroy();
+        assertThat(recorded).extracting(Deployment::trigger).containsExactly("push", "poll");
+        assertThat(recorded.get(1).finishedAt()).isEqualTo(queue.last().orElseThrow().finishedAt());
+    }
+
+    @Test
+    void aBrokenHistoryNeverFailsARunNorStopsTheWorker() throws Exception {
+        blockFirst = false;
+        historyBroken = true;
+        DeployQueue queue = queue();
+        queue.submit("one");
+        awaitRuns(1);
+        awaitIdle(queue);
+        assertThat(queue.last()).isPresent();
+        historyBroken = false;
+        assertThat(queue.submit("two")).isEqualTo(DeployQueue.Result.QUEUED);
+        awaitRecorded(1);
+        queue.destroy();
+        assertThat(recorded).extracting(Deployment::trigger).containsExactly("two");
+    }
+
+    @Test
+    void theStateIsRunningDuringARunWaitingWithOneBehindAndIdleAfter() throws Exception {
+        DeployQueue queue = queue();
+        assertThat(queue.state()).isEqualTo(DeployQueue.State.IDLE);
+        queue.submit("first");
+        assertThat(started.await(5, TimeUnit.SECONDS)).isTrue();
+        assertThat(queue.state()).isEqualTo(DeployQueue.State.RUNNING);
+        queue.submit("second");
+        assertThat(queue.state()).isEqualTo(DeployQueue.State.WAITING);
+        release.countDown();
+        awaitRecorded(2);
+        for (int i = 0; i < 100 && queue.state() != DeployQueue.State.IDLE; i++) {
+            Thread.sleep(20);
+        }
+        assertThat(queue.state()).isEqualTo(DeployQueue.State.IDLE);
+        queue.destroy();
+    }
+
+    private void awaitRecorded(int count) throws InterruptedException {
+        for (int i = 0; i < 100 && recorded.size() < count; i++) {
+            Thread.sleep(50);
+        }
+        assertThat(recorded).hasSize(count);
     }
 
     private void awaitRuns(int count) throws InterruptedException {

@@ -69,7 +69,7 @@ Versions are true on 2026-11-13.
 | Framework | Spring Boot | 3.5.16 (`pom.xml:10`) |
 | Framework | Spring Shell | 3.4.3 (`pom.xml:21`) |
 | Build | Maven, no wrapper script | 3.9+ (`README.md:71`) |
-| Database | none | |
+| Database | SQLite, server mode only (deployment history) | `org.xerial:sqlite-jdbc`, managed by the Spring Boot parent |
 | Messaging | none | |
 | Test | `spring-boot-starter-test` (JUnit 5, AssertJ) | managed by the Spring Boot parent (`pom.xml:42-46`) |
 | Site template | HTML, CSS, JavaScript without a build step | `src/main/resources/template/mbs-blog/` |

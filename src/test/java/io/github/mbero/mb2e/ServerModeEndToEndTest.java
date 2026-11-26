@@ -261,4 +261,23 @@ class ServerModeEndToEndTest {
         assertThat(git(targetBare, "rev-parse", "main")).isEqualTo(head);
         assertThat(health()).contains("\"status\":\"up\"");
     }
+
+    @Test
+    @Order(6)
+    void theDashboardApiListsEveryRunNewestFirstFromTheHistoryFileOnTheVolume() throws Exception {
+        String deployments = HTTP.send(HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port
+                + "/api/deployments?limit=500")).build(), HttpResponse.BodyHandlers.ofString()).body();
+        Matcher outcomes = OUTCOME.matcher(deployments);
+        java.util.List<String> seen = new java.util.ArrayList<>();
+        while (outcomes.find()) {
+            seen.add(outcomes.group(1));
+        }
+        assertThat(seen).first().isEqualTo("refused");
+        assertThat(seen).contains("deployed", "up_to_date");
+        assertThat(deployments).doesNotContain(temp.toString());
+        String status = HTTP.send(HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + "/api/status"))
+                .build(), HttpResponse.BodyHandlers.ofString()).body();
+        assertThat(status).contains("\"maxAttempts\":3").contains("\"state\":\"");
+        assertThat(temp.resolve("workspace").resolve("history.db")).isRegularFile();
+    }
 }

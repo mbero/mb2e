@@ -151,6 +151,15 @@ class GithubWebhookControllerTest {
             }
             return new io.github.mbero.mb2e.domain.model.DeployReport("t", "up_to_date", null, null, reason, null,
                     null, 1, null);
+        }, new io.github.mbero.mb2e.domain.port.out.DeploymentHistory() {
+            @Override
+            public void record(io.github.mbero.mb2e.domain.model.Deployment deployment) {
+            }
+
+            @Override
+            public java.util.List<io.github.mbero.mb2e.domain.model.Deployment> newest(int limit) {
+                return java.util.List.of();
+            }
         }, new io.github.mbero.mb2e.adapter.in.log.StepLog(""), java.time.Duration.ofSeconds(5));
         MockMvc blocked = server(real, 1024);
         long begin = System.nanoTime();

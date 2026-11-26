@@ -17,9 +17,9 @@ public class HealthController {
     record LastDeploy(String outcome, String finishedAt, String traceId) {
     }
 
-    private final DeployHistory history;
+    private final LatestDeploy history;
 
-    public HealthController(DeployHistory history) {
+    public HealthController(LatestDeploy history) {
         this.history = history;
     }
 

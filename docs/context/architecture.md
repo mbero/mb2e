@@ -109,13 +109,15 @@ java -jar mb2e.jar run
 
 ## Persistence
 
-mb2e has no database. It keeps nothing between two runs.
+The CLI has no database and keeps nothing between two runs. The server mode keeps one SQLite file,
+`<workspace>/history.db`, with the newest 500 deployments (`SqliteDeploymentHistory`, schema `src/main/resources/db/deployments.sql`).
 
 | Store | What it holds | Owner | Migration tool |
 |---|---|---|---|
 | Vault folder | Markdown notes and attachments; read only | the user | none |
 | Template folder | `index.html`, `assets/`; read only | the user | none |
-| Publication target folder | The mirrored site; the only place that mb2e writes | the user | none |
+| Publication target folder | The mirrored site; the only place that the CLI writes | the user | none |
+| `<workspace>/history.db` (server mode) | Deployment history for the dashboard API; a write failure never fails a deployment | mb2e | `CREATE TABLE IF NOT EXISTS` on first use |
 | Optional log file (`mb2e.log.file`) | Step lines and stack traces, appended | the user | none |
 
 ## Cross-cutting concerns
