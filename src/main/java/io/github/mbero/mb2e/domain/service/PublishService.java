@@ -187,19 +187,8 @@ public class PublishService implements PublishUseCase {
     // ---------- the plan ----------
 
     private Plan planFor(Assembly built) {
-        Map<String, byte[]> source = new TreeMap<>();
-        source.put("index.html", site.read("index.html"));
-        source.put(".nojekyll", new byte[0]);
-        for (String file : site.files("assets")) {
-            if (!isDsStore(file) && !isMarkdown(file) && !file.equals(DATA_SCRIPT)) {
-                source.put(file, site.read(file));
-            }
-        }
-        source.put(DATA_SCRIPT, built.site().dataScript().getBytes(StandardCharsets.UTF_8));
+        Map<String, byte[]> source = siteFiles(built);
         List<String> media = new ArrayList<>(built.site().images());
-        for (String image : media) {
-            source.put(NOTE_IMAGES + "/" + image, vault.readFile(image));
-        }
 
         Map<String, byte[]> writes = new TreeMap<>();
         List<String> notes = new ArrayList<>();
@@ -229,6 +218,23 @@ public class PublishService implements PublishUseCase {
         deleted.sort(null);
         writes.keySet().forEach(target::verifyWritable);
         return new Plan(writes, deleted, stale, media, mediaDeleted, built.report().missingAssets(), notes);
+    }
+
+    /** Every file of the published site by its target path: the template, the generated data and the images. */
+    private Map<String, byte[]> siteFiles(Assembly built) {
+        Map<String, byte[]> source = new TreeMap<>();
+        source.put("index.html", site.read("index.html"));
+        source.put(".nojekyll", new byte[0]);
+        for (String file : site.files("assets")) {
+            if (!isDsStore(file) && !isMarkdown(file) && !file.equals(DATA_SCRIPT)) {
+                source.put(file, site.read(file));
+            }
+        }
+        source.put(DATA_SCRIPT, built.site().dataScript().getBytes(StandardCharsets.UTF_8));
+        for (String image : built.site().images()) {
+            source.put(NOTE_IMAGES + "/" + image, vault.readFile(image));
+        }
+        return source;
     }
 
     /**

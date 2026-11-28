@@ -53,6 +53,10 @@ question a new person asks six months later: *why is it built this way?*
 | [0003](0003-deploy-by-git-clones-and-the-git-program.md) | Deploy with two shallow clones and the git program | accepted | 2026-11-25 |
 | [0004](0004-signed-webhook-and-one-slot-queue.md) | Accept a signed webhook and run one deployment at a time | accepted | 2026-11-25 |
 | [0005](0005-one-container-one-volume-one-replica.md) | Run one container on one volume with a read-only root | accepted | 2026-11-25 |
+| [0006](0006-deployment-history-in-sqlite.md) | Keep the deployment history in one SQLite file on the workspace volume | accepted | 2026-11-26 |
+| [0007](0007-angular-dashboard-served-by-the-service.md) | Build the dashboard as an Angular app in the image and serve it from the service | accepted | 2026-11-26 |
+| [0008](0008-github-oauth-for-one-login.md) | Sign in to the dashboard with GitHub OAuth for one allowed login | accepted | 2026-11-26 |
+| [0009](0009-server-side-session-with-lax-cookie.md) | Keep the login in a server-side session with a SameSite=Lax cookie | accepted | 2026-11-26 |
 
 > Add a row for every new ADR. `bootstrap/check.sh` reports a file missing from
 > this table.

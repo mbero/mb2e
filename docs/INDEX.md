@@ -2,7 +2,7 @@
 title: Knowledge base index
 type: context
 status: current
-updated: 2026-11-25
+updated: 2026-11-26
 sources: []
 tags: [meta, index]
 ---
@@ -17,21 +17,27 @@ Open a document only when its title matches the question.
 | Document | Title | Type | Status | Updated |
 |---|---|---|---|---|
 | [`context/architecture.md`](context/architecture.md) | Architecture | context | draft | 2026-11-25 |
-| [`context/conventions.md`](context/conventions.md) | Development conventions | context | draft | 2026-11-25 |
+| [`context/conventions.md`](context/conventions.md) | Development conventions | context | draft | 2026-11-26 |
 | [`context/domain.md`](context/domain.md) | Business domain | context | draft | 2026-11-13 |
 | [`context/ecosystem.md`](context/ecosystem.md) | Ecosystem context | context | draft | 2026-11-25 |
 | [`context/glossary.md`](context/glossary.md) | Glossary | context | draft | 2026-11-25 |
 | [`context/local-setup.md`](context/local-setup.md) | Local setup | context | draft | 2026-11-13 |
 | [`context/overview.md`](context/overview.md) | Project overview | context | draft | 2026-11-25 |
-| [`context/toolchain.md`](context/toolchain.md) | Toolchain | context | draft | 2026-11-13 |
+| [`context/toolchain.md`](context/toolchain.md) | Toolchain | context | draft | 2026-11-26 |
 | [`decisions/0001-record-architecture-decisions.md`](decisions/0001-record-architecture-decisions.md) | Record architecture decisions | decision | current | 2026-11-06 |
 | [`decisions/0002-server-mode-in-the-same-artifact.md`](decisions/0002-server-mode-in-the-same-artifact.md) | Run the server mode from the same jar and separate the modes with a property | decision | current | 2026-11-25 |
 | [`decisions/0003-deploy-by-git-clones-and-the-git-program.md`](decisions/0003-deploy-by-git-clones-and-the-git-program.md) | Deploy with two shallow clones and the git program | decision | current | 2026-11-25 |
 | [`decisions/0004-signed-webhook-and-one-slot-queue.md`](decisions/0004-signed-webhook-and-one-slot-queue.md) | Accept a signed webhook and run one deployment at a time | decision | current | 2026-11-25 |
 | [`decisions/0005-one-container-one-volume-one-replica.md`](decisions/0005-one-container-one-volume-one-replica.md) | Run one container on one volume with a read-only root | decision | current | 2026-11-25 |
-| [`knowledge/server-mode.md`](knowledge/server-mode.md) | Server mode — how a push becomes a deployed site | knowledge | current | 2026-11-25 |
-| [`lessons-learned/server-deployment-playbook.md`](lessons-learned/server-deployment-playbook.md) | Server mode deployment — landscape and diagnostic playbooks | lesson | draft | 2026-11-25 |
-| [`qa/project-rules.md`](qa/project-rules.md) | Project exceptions to the global coding rules | lesson | current | 2026-11-25 |
+| [`decisions/0006-deployment-history-in-sqlite.md`](decisions/0006-deployment-history-in-sqlite.md) | Keep the deployment history in one SQLite file on the workspace volume | decision | current | 2026-11-26 |
+| [`decisions/0007-angular-dashboard-served-by-the-service.md`](decisions/0007-angular-dashboard-served-by-the-service.md) | Build the dashboard as an Angular app in the image and serve it from the service | decision | current | 2026-11-26 |
+| [`decisions/0008-github-oauth-for-one-login.md`](decisions/0008-github-oauth-for-one-login.md) | Sign in to the dashboard with GitHub OAuth for one allowed login | decision | current | 2026-11-26 |
+| [`decisions/0009-server-side-session-with-lax-cookie.md`](decisions/0009-server-side-session-with-lax-cookie.md) | Keep the login in a server-side session with a SameSite=Lax cookie | decision | current | 2026-11-26 |
+| [`design/dashboard/CLAUDE_DESIGN_BRIEF.md`](design/dashboard/CLAUDE_DESIGN_BRIEF.md) | Dashboard design brief | knowledge | current | 2026-11-26 |
+| [`design/dashboard/DESIGN_HANDOFF.md`](design/dashboard/DESIGN_HANDOFF.md) | Dashboard design handoff | knowledge | current | 2026-11-26 |
+| [`knowledge/server-mode.md`](knowledge/server-mode.md) | Server mode — how a push becomes a deployed site | knowledge | current | 2026-11-26 |
+| [`lessons-learned/server-deployment-playbook.md`](lessons-learned/server-deployment-playbook.md) | Server mode deployment — landscape and diagnostic playbooks | lesson | draft | 2026-11-26 |
+| [`qa/project-rules.md`](qa/project-rules.md) | Project exceptions to the global coding rules | lesson | current | 2026-11-26 |
 | [`qa/review-ignore.md`](qa/review-ignore.md) | Known false alarms of code review in this project | lesson | current | 2026-11-25 |
 | [`qa/review-learnings.md`](qa/review-learnings.md) | Register of code-review findings that may recur | lesson | current | 2026-11-25 |
-| [`sessions/history.md`](sessions/history.md) | Session history | context | current | 2026-11-25 |
+| [`sessions/history.md`](sessions/history.md) | Session history | context | current | 2026-11-26 |

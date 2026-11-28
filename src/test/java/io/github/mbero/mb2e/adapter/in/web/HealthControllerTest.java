@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import io.github.mbero.mb2e.domain.model.DeployReport;
 import java.time.Instant;
+import io.github.mbero.mb2e.adapter.in.log.StepLog;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.web.servlet.MockMvc;
@@ -17,7 +18,8 @@ class HealthControllerTest {
     private Optional<DeployQueue.Last> last = Optional.empty();
     private final MockMvc mvc = MockMvcBuilders.routerFunctions(WebRoutes.of(
             new GithubWebhookController(reason -> DeployQueue.Result.QUEUED,
-                    new WebhookSettings("0123456789abcdef0123456789abcdef", 1024, "me/notes", "main")),
+                    new WebhookSettings("0123456789abcdef0123456789abcdef", 1024, "me/notes", "main"),
+                    new StepLog("")),
             new HealthController(() -> last))).build();
 
     @Test

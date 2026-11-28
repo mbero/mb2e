@@ -1,0 +1,26 @@
+<svg
+  [attr.width]="size() === 'lg' ? 12 : 11"
+  [attr.height]="size() === 'lg' ? 12 : 11"
+  viewBox="0 0 12 12"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  aria-hidden="true"
+>
+  @switch (outcome()) {
+    @case ('deployed') {
+      <path d="m2 6.5 2.5 2.5L10 3.5" />
+    }
+    @case ('up_to_date') {
+      <path d="M2.5 4.5h7M2.5 7.5h7" />
+    }
+    @case ('refused') {
+      <path d="M3 6h6" />
+    }
+    @case ('failed') {
+      <path d="M6 2v5" />
+      <circle cx="6" cy="9.5" r=".6" fill="currentColor" />
+    }
+  }
+</svg>
+{{ label() }}

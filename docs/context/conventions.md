@@ -2,7 +2,7 @@
 title: Development conventions
 type: context
 status: draft
-updated: 2026-11-25
+updated: 2026-11-26
 sources:
   - pom.xml
   - src/main/java/io/github/mbero/mb2e/domain/service/BuildService.java
@@ -15,6 +15,7 @@ sources:
   - src/test/java/io/github/mbero/mb2e/Mb2eExitCodeTest.java
   - src/test/java/io/github/mbero/mb2e/domain/service/BuildServiceTest.java
   - src/test/java/io/github/mbero/mb2e/Mb2eApplicationTest.java
+  - ui/.prettierrc
 tags: [conventions, code]
 ---
 
@@ -39,7 +40,7 @@ written convention existed before this file. Java paths are below
 | Exception | Ends with `Failure` or `Refusal`, extends `RuntimeException` | `StoreFailure`, `GitFailure`, `ShellRefusal` |
 | Test class | `<ClassUnderTest>Test`, package-private | `RemoteGuardTest` |
 | Test method | A camelCase sentence that states the behaviour | `aMissingVaultIsRefusedAndNamesThePath` |
-| Database table | n/a. No database exists. | |
+| Database table | Plural snake_case noun; columns in snake_case | `deployments`, `finished_at` |
 | Configuration key | `mb2e.<kebab-case>` | `mb2e.default-note`, `mb2e.vault.path` |
 
 ## Package structure
@@ -86,7 +87,8 @@ See [`architecture.md`](architecture.md) for the evidence.
 - Indentation is four spaces. The longest line in `src/main/java` has 124 characters (measured 2026-11-13).
 - Each class has a Javadoc block. The first sentence is a summary in the third person. A block has at most five lines.
 - A comment explains **why**, never **what**.
-- No lint or format tool exists. Match the formatting of the surrounding file.
+- No lint or format tool exists for the Java code. Match the formatting of the surrounding file.
+- Dashboard UI (`ui/`): one standalone component per file, `OnPush`, signals. The template and the CSS live in `<name>.html` and `<name>.css` beside `<name>.ts` (`docs/qa/project-rules.md` `[P-UI-01]`). Format with `npx prettier --write` in `ui/` (`ui/.prettierrc`, 100 columns).
 
 ## Tests
 
@@ -116,7 +118,7 @@ See [`architecture.md`](architecture.md) for the evidence.
 - The refusal sentence goes to standard error as plain text, with no stack trace and no colour.
 - The exit code is 0 for success and 1 for each refusal or failure. No other code exists.
 - A refusal message names the thing that it refuses: the path, the key, or the word.
-- The step line goes to the logger `mb2e.step` at INFO. A stack trace goes only to the optional log file (`adapter/in/log/StepLog.java:79-87`).
+- The step line goes to the logger `mb2e.step`: ERROR for `outcome=failed`, WARN for `refused` (and a denied login), INFO otherwise. Free text is quoted and kept on one line; a stack trace goes only to the optional log file (`adapter/in/log/StepLog.java`).
 
 Review error handling **before** you hand a change over. See
 `.agents/procedures/pre-commit-review.md`.

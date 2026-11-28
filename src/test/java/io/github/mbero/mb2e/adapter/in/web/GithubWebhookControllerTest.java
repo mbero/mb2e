@@ -6,6 +6,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import io.github.mbero.mb2e.adapter.in.log.StepLog;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -41,11 +44,27 @@ class GithubWebhookControllerTest {
     }
 
     private final RecordingTrigger queue = new RecordingTrigger();
-    private final MockMvc mvc = server(queue, 1024);
+    private final Path logFile = tempLog();
+    private final MockMvc mvc = server(queue, 1024, logFile);
+
+    private static Path tempLog() {
+        try {
+            Path file = Files.createTempFile("mb2e-webhook", ".log");
+            file.toFile().deleteOnExit();
+            return file;
+        } catch (IOException failure) {
+            throw new UncheckedIOException(failure);
+        }
+    }
 
     private static MockMvc server(DeployTrigger trigger, long maxBodyBytes) {
+        return server(trigger, maxBodyBytes, null);
+    }
+
+    private static MockMvc server(DeployTrigger trigger, long maxBodyBytes, Path log) {
         GithubWebhookController webhook = new GithubWebhookController(trigger,
-                new WebhookSettings(SECRET, maxBodyBytes, "me/notes", "main"));
+                new WebhookSettings(SECRET, maxBodyBytes, "me/notes", "main"),
+                new StepLog(log == null ? "" : log.toString()));
         HealthController health = new HealthController(java.util.Optional::empty);
         return MockMvcBuilders.routerFunctions(WebRoutes.of(webhook, health)).build();
     }
@@ -84,6 +103,20 @@ class GithubWebhookControllerTest {
         send("push", PUSH, sign("another secret of enough length 123456", PUSH)).andExpect(status().isUnauthorized());
         send("push", PUSH, "sha256=zz").andExpect(status().isUnauthorized());
         assertThat(queue.reasons).isEmpty();
+    }
+
+    @Test
+    void everyDeliveryWritesOneLogLineAndAForgedDeliveryIdStaysOneWord() throws Exception {
+        send("push", PUSH, null);
+        signed("push", PUSH);
+        mvc.perform(post("/webhook/github").contentType(MediaType.APPLICATION_JSON).content("{}")
+                .header("X-GitHub-Event", "ping").header("X-GitHub-Delivery", "d-2\nstep=deploy outcome=deployed"));
+        List<String> lines = Files.readAllLines(logFile);
+        assertThat(lines).hasSize(3);
+        assertThat(lines.get(0)).endsWith("step=webhook outcome=refused reason=\"signature\" delivery=d-1");
+        assertThat(lines.get(1)).endsWith("step=webhook outcome=queued delivery=d-1");
+        assertThat(lines.get(2)).endsWith("step=webhook outcome=refused reason=\"signature\""
+                + " delivery=d-2_step_deploy_outcome_deployed");
     }
 
     @Test
@@ -151,6 +184,15 @@ class GithubWebhookControllerTest {
             }
             return new io.github.mbero.mb2e.domain.model.DeployReport("t", "up_to_date", null, null, reason, null,
                     null, 1, null);
+        }, new io.github.mbero.mb2e.domain.port.out.DeploymentHistory() {
+            @Override
+            public void record(io.github.mbero.mb2e.domain.model.Deployment deployment) {
+            }
+
+            @Override
+            public java.util.List<io.github.mbero.mb2e.domain.model.Deployment> newest(int limit) {
+                return java.util.List.of();
+            }
         }, new io.github.mbero.mb2e.adapter.in.log.StepLog(""), java.time.Duration.ofSeconds(5));
         MockMvc blocked = server(real, 1024);
         long begin = System.nanoTime();

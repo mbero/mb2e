@@ -2,12 +2,14 @@
 title: Toolchain
 type: context
 status: draft
-updated: 2026-11-13
+updated: 2026-11-26
 sources:
   - pom.xml
   - README.md
   - bootstrap/check.sh
   - .github/workflows/knowledge-base.yml
+  - ui/package.json
+  - ui/angular.json
 tags: [toolchain, commands]
 ---
 
@@ -26,6 +28,10 @@ root, because `pom.xml` and `application_local_paths.yaml` are there.
 | Lint / format | n/a | No lint or format plugin exists in `pom.xml` |
 | Knowledge-base check | `bootstrap/check.sh` | Run in the knowledge base root, before you open a pull request |
 | Knowledge-base index | `bootstrap/check.sh --index` | Run after you add, rename, or retitle a document |
+| Dashboard UI: install | `npm ci` in `ui/` | Node 22 and npm 10; Maven does not need Node |
+| Dashboard UI: tests | `npx ng test --watch=false` in `ui/` | Vitest with jsdom |
+| Dashboard UI: build | `npx ng build` in `ui/` | Writes `ui/dist/mb2e-dashboard/browser/` with the base `/dashboard/` |
+| Dashboard UI: local run | `npx ng serve` in `ui/` | Proxies `/api`, `/oauth2` and `/login/oauth2` to `localhost:8080` (`ui/proxy.conf.json`) |
 
 No Maven wrapper exists. The commands `./mvnw ...` do not work in this repository.
 
@@ -76,10 +82,13 @@ True on 2026-11-13.
 | Spring Shell | 3.4.3 | `pom.xml:21` |
 | Project | 0.1.0-SNAPSHOT | `pom.xml:16` |
 | Maven | 3.9 or later, not pinned | `README.md:71` |
+| Angular | 22.3 | `ui/package.json` |
+| Node / npm | 22 / 10, not pinned | local machine on 2026-11-26 |
 
 ## Continuous integration
 
 - `.github/workflows/knowledge-base.yml` runs `bootstrap/check.sh` on a pull request and on a push to `main`.
+- `.github/workflows/dashboard-ui.yml` runs the UI tests and the UI build on a change under `ui/`.
 - No workflow builds or tests the Java code.
 
 ## What could not be verified

@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>mb2e — Empty, loading and error states</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#fff;color:#111;-webkit-font-smoothing:antialiased}
+a{color:#111;text-underline-offset:3px}a:hover{color:#000}
+.lbl{font:500 12px 'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:#5c5c5c}
+.cap{font:700 13px 'Fira Code',monospace;letter-spacing:.06em;text-transform:uppercase;padding:10px 16px;background:#f6f6f6;border-bottom:1px solid #e3e3e3}
+.sk{background:#ebebeb;border-radius:4px}
+</style>
+</helmet>
+<div style="width:1440px;box-sizing:border-box;padding:48px;font-family:'Fira Code',monospace;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:40px">
+
+<!-- Empty -->
+<section style="border:1px solid #e3e3e3;border-radius:5px;overflow:hidden">
+<div class="cap">4 · Empty — service started, no deployment yet</div>
+<div style="padding:32px 32px 36px">
+<h1 style="margin:0;font-size:32px;font-weight:700;letter-spacing:-.02em;text-transform:uppercase">Deployments</h1>
+<p style="margin:8px 0 0;font-size:12px;color:#5c5c5c">Updated 3 s ago · refreshes every 15 s</p>
+<div style="margin-top:20px;border-top:2px solid #111;padding-top:12px" class="lbl">Service</div>
+<p style="margin:8px 0 0;font-size:14px"><b style="text-transform:uppercase">◉ Running</b> · up 0d 0h 1m · mbero/notes → mbero/mbero.github.io</p>
+<div style="margin-top:24px;border-top:2px solid #111;padding-top:12px" class="lbl">Last deployment</div>
+<div style="margin-top:10px;border:1px dashed #c4c4c4;border-radius:5px;padding:28px 24px;text-align:center">
+<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="1.5" aria-hidden="true"><path d="M4 7h16v13H4zM8 7V4h8v3M9 13h6"/></svg>
+<p style="margin:10px 0 0;font-size:16px;font-weight:700;text-transform:uppercase;letter-spacing:-.02em">No deployments yet</p>
+<p style="margin:8px auto 0;max-width:420px;font:400 15px/1.6 Inter,sans-serif;color:#3d3d3d">The service started and is building your notes for the first time. Your first deployment shows up here in a moment — or push to <strong>mbero/notes</strong> to start one.</p>
+</div>
+</div>
+</section>
+
+<!-- Loading -->
+<section style="border:1px solid #e3e3e3;border-radius:5px;overflow:hidden" aria-busy="true">
+<div class="cap">5 · Loading — first load only</div>
+<div style="padding:32px 32px 36px">
+<h1 style="margin:0;font-size:32px;font-weight:700;letter-spacing:-.02em;text-transform:uppercase">Deployments</h1>
+<p style="margin:8px 0 0;font-size:12px;color:#5c5c5c" role="status">Loading deployments…</p>
+<div style="margin-top:20px;border-top:2px solid #111;padding-top:14px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px">
+<div class="sk" style="height:52px"></div><div class="sk" style="height:52px"></div><div class="sk" style="height:52px"></div><div class="sk" style="height:52px"></div>
+</div>
+<div style="margin-top:24px;border-top:2px solid #111;padding-top:14px"><div class="sk" style="height:120px"></div></div>
+<div style="margin-top:24px;border-top:2px solid #111;padding-top:14px;display:flex;flex-direction:column;gap:8px">
+<div style="height:34px;background:#f6f6f6;border-bottom:2px solid #111"></div>
+<div class="sk" style="height:30px;opacity:.9"></div><div class="sk" style="height:30px;opacity:.7"></div><div class="sk" style="height:30px;opacity:.5"></div>
+</div>
+<p style="margin:14px 0 0;font-size:12px;color:#5c5c5c">Static grey blocks, no shimmer — nothing moves (prefers-reduced-motion safe by default).</p>
+</div>
+</section>
+
+<!-- API down -->
+<section style="border:1px solid #e3e3e3;border-radius:5px;overflow:hidden">
+<div class="cap">6a · Error — the API does not answer</div>
+<div style="padding:32px 32px 36px">
+<h1 style="margin:0;font-size:32px;font-weight:700;letter-spacing:-.02em;text-transform:uppercase">Deployments</h1>
+<div role="alert" style="margin-top:18px;padding:14px 16px;border-left:3px solid #000;background:#f6f6f6;font-size:14px;line-height:1.6">
+<b style="text-transform:uppercase;letter-spacing:.02em">Can't reach the service</b><br>
+<span style="font-family:Inter,sans-serif;font-size:15px;color:#3d3d3d">The last successful update was 2 min ago. The data below may be out of date. Trying again in 15 s.</span>
+</div>
+<div style="margin-top:20px;border-top:2px solid #111;padding-top:12px;display:flex;justify-content:space-between" class="lbl"><span>Last deployment</span><span style="color:#111">Stale · as of 22:20</span></div>
+<div style="margin-top:10px;border:1px solid #e3e3e3;border-radius:5px;padding:18px 20px;opacity:.6">
+<span style="display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 9px;border-radius:4px;background:#111;color:#f2f2f2;font-size:12px;font-weight:600">✓ DEPLOYED</span>
+<span style="margin-left:10px;font-size:13px;color:#5c5c5c">21:52:40 · 7d03b1f → 9f8e7d6</span>
+</div>
+<p style="margin:14px 0 0;font-size:12px;color:#5c5c5c">Keep the last known data, dimmed and labelled "stale". With no data at all, show only the notice.</p>
+</div>
+</section>
+
+<!-- Session expired -->
+<section style="border:1px solid #e3e3e3;border-radius:5px;overflow:hidden">
+<div class="cap">6b · Error — the session expired</div>
+<div style="padding:32px 32px 36px">
+<h1 style="margin:0;font-size:32px;font-weight:700;letter-spacing:-.02em;text-transform:uppercase">Deployments</h1>
+<div role="alert" style="margin-top:18px;padding:18px 18px 20px;border-left:3px solid #000;background:#f6f6f6">
+<b style="font-size:14px;text-transform:uppercase;letter-spacing:.02em">Your session has expired</b>
+<p style="margin:6px 0 0;font:400 15px/1.6 Inter,sans-serif;color:#3d3d3d">Sign in again to keep watching your deployments. You'll come back to this page.</p>
+<a href="SignIn.dc.html" style="margin-top:14px;display:inline-flex;align-items:center;gap:10px;height:44px;padding:0 18px;border-radius:4px;background:#000;color:#fff;font-size:14px;font-weight:600;text-decoration:none">Sign in with GitHub</a>
+</div>
+<p style="margin:14px 0 0;font-size:12px;color:#5c5c5c">Auto-refresh stops; the old data is hidden. On a 401 the app shows this inline instead of a hard redirect, so the user knows why.</p>
+</div>
+</section>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1100}}'>
+class Component extends DCLogic { renderVals() { return {}; } }
+</script>
+</body>
+</html>

@@ -1,0 +1,24 @@
+# Example Caddy site for the mb2e service on the same host. Caddy gets and renews the TLS
+# certificate and forwards every request to the container, which listens on the loopback only.
+# Caddy does no authentication: the service checks the webhook signature and the dashboard login.
+#
+# Set MB2E_HOST to the public host name, for example: MB2E_HOST=mb2e.example.com caddy run
+
+{$MB2E_HOST} {
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		Referrer-Policy "same-origin"
+		-Server
+	}
+
+	# The largest webhook body the service accepts (MB2E_WEBHOOK_MAX_BODY_BYTES, 25 MiB).
+	request_body {
+		max_size 25MiB
+	}
+
+	# Caddy sets X-Forwarded-Proto and X-Forwarded-Host. The service builds the OAuth callback
+	# address from them, so GitHub sends the browser back to https://{$MB2E_HOST}.
+	reverse_proxy 127.0.0.1:8080
+}

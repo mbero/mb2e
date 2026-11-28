@@ -8,8 +8,9 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -111,7 +112,7 @@ final class GitRunner {
     static Map<String, String> childEnvironment(Map<String, String> inherited, Map<String, String> extra) {
         Map<String, String> child = new HashMap<>();
         inherited.forEach((name, value) -> {
-            if (!name.toUpperCase(java.util.Locale.ROOT).startsWith(OWN_PREFIX)
+            if (!name.toUpperCase(Locale.ROOT).startsWith(OWN_PREFIX)
                     && !name.equals("SPRING_APPLICATION_JSON")) {
                 child.put(name, value);
             }

@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -150,7 +151,7 @@ public class FilePublishTarget implements PublishTarget {
             return;
         }
         try (Stream<Path> walk = Files.walk(start)) {
-            for (Path path : walk.sorted(java.util.Comparator.reverseOrder()).toList()) {
+            for (Path path : walk.sorted(Comparator.reverseOrder()).toList()) {
                 Files.delete(path);
             }
         } catch (IOException failure) {

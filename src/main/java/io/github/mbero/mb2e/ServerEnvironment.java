@@ -3,7 +3,9 @@ package io.github.mbero.mb2e;
 import io.github.mbero.mb2e.infrastructure.config.ServerProperties;
 import java.nio.file.Path;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -22,6 +24,10 @@ final class ServerEnvironment {
     static final long MAX_BODY_BYTES = Integer.MAX_VALUE - 8L;
     private static final Pattern BRANCH = Pattern.compile("^[A-Za-z0-9_][A-Za-z0-9._/-]*$");
     private static final int MIN_SECRET_LENGTH = 32;
+    /** A GitHub login: letters, digits and single inner hyphens, at most 39 characters. */
+    private static final Pattern LOGIN = Pattern.compile("^[A-Za-z0-9](?:[A-Za-z0-9]|-(?=[A-Za-z0-9])){0,38}$");
+    private static final String[] DASHBOARD = {"MB2E_DASHBOARD_ALLOWED_LOGIN", "MB2E_DASHBOARD_OAUTH_CLIENT_ID",
+        "MB2E_DASHBOARD_OAUTH_CLIENT_SECRET"};
 
     private final Map<String, String> environment;
     private final Function<Path, String> fileReader;
@@ -71,6 +77,7 @@ final class ServerEnvironment {
         out.put("mb2e.server.source.subdir", subdir);
         out.put("mb2e.server.source.token", sourceToken);
         out.put("mb2e.server.target.url", targetUrl);
+        out.put("mb2e.server.target.repository", identity(targetUrl));
         out.put("mb2e.server.target.branch", branch("MB2E_TARGET_BRANCH"));
         out.put("mb2e.server.target.token", targetToken);
         out.put("mb2e.server.webhook.secret", webhook);
@@ -94,7 +101,34 @@ final class ServerEnvironment {
         out.put("mb2e.vault.path", subdir.isEmpty() ? Path.of(workspace, "source").toString()
                 : Path.of(workspace, "source", subdir).toString());
         out.put("mb2e.target.path", Path.of(workspace, "target").toString());
+        dashboard(out);
         return out;
+    }
+
+    /** The dashboard is on only when all three of its variables are set; a partial set is refused. */
+    private void dashboard(Map<String, Object> out) {
+        String login = raw(DASHBOARD[0]);
+        String clientId = raw(DASHBOARD[1]);
+        String clientSecret = secret(DASHBOARD[2], false);
+        if (login == null && clientId == null && clientSecret == null) {
+            out.put("mb2e.server.dashboard.enabled", false);
+            return;
+        }
+        String[] values = {login, clientId, clientSecret};
+        for (int i = 0; i < values.length; i++) {
+            if (values[i] == null) {
+                throw refused("The dashboard needs all of " + String.join(", ", DASHBOARD) + ". Missing: "
+                        + DASHBOARD[i]);
+            }
+        }
+        if (!LOGIN.matcher(login).matches()) {
+            throw refused(DASHBOARD[0] + " must be one GitHub login.");
+        }
+        out.put("mb2e.server.dashboard.enabled", true);
+        out.put("mb2e.server.dashboard.allowed-login", login);
+        out.put("mb2e.server.dashboard.client-id", clientId);
+        out.put("mb2e.server.dashboard.client-secret", clientSecret);
+        out.put("mb2e.server.dashboard.files", absolute("MB2E_DASHBOARD_FILES", ServerProperties.DEFAULT_DASHBOARD_FILES));
     }
 
     private static Mb2eEnvironment.Refused refused(String message) {
@@ -166,7 +200,7 @@ final class ServerEnvironment {
     private static String identity(String url) {
         Matcher matcher = REPOSITORY.matcher(url);
         matcher.matches();
-        return (matcher.group(1) + "/" + matcher.group(2)).toLowerCase(java.util.Locale.ROOT);
+        return (matcher.group(1) + "/" + matcher.group(2)).toLowerCase(Locale.ROOT);
     }
 
     private String branch(String name) {
@@ -235,11 +269,11 @@ final class ServerEnvironment {
     }
 
     /** Returns the commit message when it is set; the default lives in {@code Mb2eProperties} only. */
-    private java.util.Optional<String> commitMessage() {
+    private Optional<String> commitMessage() {
         String value = raw("MB2E_COMMIT_MESSAGE");
         if (value != null && (value.contains("\n") || value.contains("\r"))) {
             throw refused("MB2E_COMMIT_MESSAGE must be one line.");
         }
-        return java.util.Optional.ofNullable(value);
+        return Optional.ofNullable(value);
     }
 }

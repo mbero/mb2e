@@ -1,0 +1,16 @@
+<svg
+  width="14"
+  height="14"
+  viewBox="0 0 16 16"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="1.5"
+  aria-hidden="true"
+>
+  <path d="M13.5 8A5.5 5.5 0 1 1 11.8 4M13.5 2.5V5H11" />
+</svg>
+@if (stale()) {
+  Last updated {{ ago() }}
+} @else {
+  Updated {{ ago() }} · refreshes every {{ intervalSec() }} s
+}

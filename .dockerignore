@@ -13,3 +13,7 @@ application_local_paths.yaml
 .DS_Store
 # A local note beside the template; it is not part of the published site.
 src/main/resources/template/mbs-blog/README.md
+# The UI stage installs and builds from a clean state.
+ui/node_modules/
+ui/dist/
+ui/.angular/

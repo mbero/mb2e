@@ -1,0 +1,21 @@
+<main class="page">
+  <div class="card">
+    <div class="card-head">
+      <img src="mb2e-logo.jpg" alt="mb2e — Markdown Based Blog Engine" width="220" />
+    </div>
+    <div class="card-body">
+      <div class="label">Deployment dashboard</div>
+      <h1>No access</h1>
+      <p class="lead">
+        @if (login()) {
+          You are signed in as <strong>{{ login() }}</strong>.
+        }
+        This dashboard is open only to the owner of this blog.
+      </p>
+      <p class="notice">
+        Wrong account? Sign out, then sign in to GitHub with the owner's account.
+      </p>
+      <a class="action" href="./sign-in">Sign out</a>
+    </div>
+  </div>
+</main>

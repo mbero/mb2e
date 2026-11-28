@@ -1,0 +1,16 @@
+.notice {
+  padding-top: 14px;
+}
+h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+}
+p {
+  margin: 10px 0 0;
+  font: 400 16px/1.6 var(--font-sans);
+  color: var(--color-lead);
+  max-width: 640px;
+}

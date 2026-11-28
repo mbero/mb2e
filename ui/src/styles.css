@@ -1,0 +1,81 @@
+/* Tokens of mbero.github.io (template mbs-blog), plus the dashboard additions: wide content, badge line, navy brand panel. */
+:root {
+  --color-bg: #ffffff;
+  --color-fg: #000000;
+  --color-border: #000000;
+  --color-text: #111111;
+  --color-body: #1f1f1f;
+  --color-lead: #3d3d3d;
+  --color-muted: #5c5c5c;
+  --color-panel: #f6f6f6;
+  --color-line: #e3e3e3;
+  --color-line-soft: #e6e6e6;
+  --color-hover: #ebebeb;
+  --color-active: #e2e2e2;
+  --color-code-bg: #111111;
+  --color-code-fg: #f2f2f2;
+  --color-badge-line: #c4c4c4;
+  --color-brand-bg: #23262d;
+  --color-brand-fg: #e6e5dd;
+  --color-brand-muted: #aaaeb7;
+  --color-brand-line: #383b43;
+  --color-brand-hover: #2e3139;
+  --color-brand-active: #3a3e47;
+  --color-brand-accent: #4377dd;
+
+  --font-mono: 'Fira Code', 'JetBrains Mono', monospace;
+  --font-sans: 'Inter', system-ui, sans-serif;
+
+  --sidebar-w: 280px;
+  --content-w-wide: 1040px;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body { margin: 0; }
+
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-mono);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--color-text); text-underline-offset: 3px; }
+a:hover { color: var(--color-fg); }
+
+:focus-visible { outline: 2px solid var(--color-fg); outline-offset: 2px; }
+
+.visually-hidden {
+  position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+.label {
+  font: 500 12px var(--font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+.section {
+  margin-top: 40px;
+  border-top: 2px solid var(--color-text);
+}
+.section > h2.label { margin: 14px 0 12px; }
+
+pre.cause {
+  margin: 8px 0 0;
+  padding: 14px 16px;
+  background: var(--color-code-bg);
+  color: var(--color-code-fg);
+  border-radius: 4px;
+  font: 400 13px/1.65 var(--font-mono);
+  white-space: pre-wrap;
+  overflow-x: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}

@@ -196,4 +196,56 @@ class ServerEnvironmentTest {
         env.put("SPRING_PROFILES_ACTIVE", "evil");
         assertThat(properties(env)).containsEntry("server.port", 8080L).doesNotContainKey("spring.profiles.active");
     }
+
+    @Test
+    void withoutTheDashboardVariablesTheDashboardIsOff() {
+        assertThat(properties(complete())).containsEntry("mb2e.server.dashboard.enabled", false)
+                .doesNotContainKey("mb2e.server.dashboard.allowed-login");
+    }
+
+    @Test
+    void allThreeDashboardVariablesSwitchItOn() {
+        Map<String, String> env = complete();
+        env.put("MB2E_DASHBOARD_ALLOWED_LOGIN", "my-login");
+        env.put("MB2E_DASHBOARD_OAUTH_CLIENT_ID", "id-1");
+        env.put("MB2E_DASHBOARD_OAUTH_CLIENT_SECRET_FILE", "/run/secrets/oauth");
+        Map<String, Object> p = ServerEnvironment.properties(env, path -> "oauth-secret\n");
+        assertThat(p).containsEntry("mb2e.server.dashboard.enabled", true)
+                .containsEntry("mb2e.server.dashboard.allowed-login", "my-login")
+                .containsEntry("mb2e.server.dashboard.client-id", "id-1")
+                .containsEntry("mb2e.server.dashboard.client-secret", "oauth-secret")
+                .containsEntry("mb2e.server.dashboard.files", "/opt/mb2e/dashboard");
+    }
+
+    @Test
+    void theFolderOfTheBuiltUiMustBeAnAbsolutePath() {
+        Map<String, String> env = complete();
+        env.put("MB2E_DASHBOARD_ALLOWED_LOGIN", "me");
+        env.put("MB2E_DASHBOARD_OAUTH_CLIENT_ID", "id");
+        env.put("MB2E_DASHBOARD_OAUTH_CLIENT_SECRET", "s");
+        env.put("MB2E_DASHBOARD_FILES", "/srv/ui/../dashboard");
+        assertThat(properties(env)).containsEntry("mb2e.server.dashboard.files", "/srv/dashboard");
+        env.put("MB2E_DASHBOARD_FILES", "ui/dist");
+        assertThatThrownBy(() -> properties(env)).hasMessageContaining("MB2E_DASHBOARD_FILES must be an absolute path");
+    }
+
+    @Test
+    void aPartialDashboardSetIsRefusedAndNamesTheMissingVariable() {
+        Map<String, String> env = complete();
+        env.put("MB2E_DASHBOARD_ALLOWED_LOGIN", "me");
+        env.put("MB2E_DASHBOARD_OAUTH_CLIENT_SECRET", "s");
+        assertThatThrownBy(() -> properties(env)).isInstanceOf(Mb2eEnvironment.Refused.class)
+                .hasMessageContaining("Missing: MB2E_DASHBOARD_OAUTH_CLIENT_ID").hasMessageNotContaining("s\"");
+    }
+
+    @Test
+    void anAllowedLoginThatIsNoGithubLoginIsRefused() {
+        for (String login : new String[] {"me,you", "-me", "me-", "a--b", "x".repeat(40), "me you"}) {
+            Map<String, String> env = complete();
+            env.put("MB2E_DASHBOARD_ALLOWED_LOGIN", login);
+            env.put("MB2E_DASHBOARD_OAUTH_CLIENT_ID", "id");
+            env.put("MB2E_DASHBOARD_OAUTH_CLIENT_SECRET", "s");
+            assertThatThrownBy(() -> properties(env)).as(login).hasMessageContaining("one GitHub login");
+        }
+    }
 }

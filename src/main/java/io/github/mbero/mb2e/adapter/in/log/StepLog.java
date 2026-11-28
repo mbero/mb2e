@@ -19,10 +19,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Writes one structured line per step: the step, its outcome, its counts and the trace id.
- * <p>The line goes to the {@code mb2e.step} logger, which logback sends to standard error. When
- * a log file is configured, the line and the full stack trace of any failure are appended to it
- * as well. A file that cannot be written is reported once per line as a warning and never fails a run.
+ * Writes one {@code key=value} line per step to {@code mb2e.step}: ERROR if failed, WARN if refused, else INFO.
+ * Free text is quoted and kept on one line. An optional log file also gets each stack trace; a file that
+ * cannot be written gives a warning and never fails a run.
  */
 public class StepLog {
 
@@ -62,17 +61,48 @@ public class StepLog {
 
     /** Logs the outcome of one deployment with its attempts and the commits it used. */
     public void deploy(DeployReport report) {
-        String detail = report.detail() == null ? "" : " detail=\"" + oneLine(report.detail()) + "\"";
-        LOG.info("step=deploy outcome=" + report.outcome() + " traceId=" + report.traceId() + " reason=\""
-                + oneLine(report.reason()) + "\" attempts=" + report.attempts() + " sourceCommit="
+        emit(report.outcome(), "step=deploy outcome=" + report.outcome() + " traceId=" + report.traceId()
+                + " reason=" + quoted(report.reason()) + " attempts=" + report.attempts() + " sourceCommit="
                 + commit(report.sourceCommit()) + " targetCommit=" + commit(report.targetCommit())
-                + (report.title() == null ? "" : " title=\"" + oneLine(report.title()) + "\"") + detail);
-        append("step=deploy outcome=" + report.outcome() + " traceId=" + report.traceId() + detail);
+                + (report.title() == null ? "" : " title=" + quoted(report.title()))
+                + (report.detail() == null ? "" : " detail=" + quoted(report.detail())));
     }
 
-    /** Keeps a text on one log line: line breaks become spaces and double quotes become single quotes. */
-    private static String oneLine(String text) {
-        return text == null ? "" : text.replaceAll("[\\r\\n]+", " ").replace('"', '\'').strip();
+    /**
+     * Logs one webhook delivery: {@code queued}, {@code coalesced}, {@code pong}, {@code ignored} or
+     * {@code refused}, with the reason of an ignored or refused delivery and the GitHub delivery id.
+     */
+    public void webhook(String outcome, String reason, String delivery) {
+        emit(outcome, "step=webhook outcome=" + outcome + (reason == null ? "" : " reason=" + quoted(reason))
+                + " delivery=" + word(delivery));
+    }
+
+    /** Logs the start of the server mode with the settings an operator needs to read the later lines. */
+    public void start(String settings) {
+        emit("started", "step=start outcome=started " + settings);
+    }
+
+    /**
+     * Logs one event of the dashboard login: {@code success}, {@code denied}, {@code failed} or {@code logout}.
+     * The line names only the GitHub login, never a token, a cookie or a code.
+     */
+    public void login(String event, String login) {
+        emit("denied".equals(event) || "failed".equals(event) ? "refused" : event,
+                "step=login outcome=" + event + " login=" + word(login));
+    }
+
+    /** Quotes a free text and keeps it on one line: line breaks become spaces, double quotes single quotes. */
+    private static String quoted(String text) {
+        return "\"" + (text == null ? "" : text.replaceAll("[\\r\\n]+", " ").replace('"', '\'').strip()) + "\"";
+    }
+
+    /** One unquoted word of at most 64 characters: blank becomes {@code -}, an unsafe character {@code _}. */
+    private static String word(String text) {
+        if (text == null || text.isBlank()) {
+            return "-";
+        }
+        String safe = text.strip().replaceAll("[^A-Za-z0-9._@:/-]", "_");
+        return safe.length() > 64 ? safe.substring(0, 64) : safe;
     }
 
     private static String commit(String id) {
@@ -98,9 +128,8 @@ public class StepLog {
     /** Logs a step that ended with an exception, under a fresh trace id, and appends its stack trace to the file. */
     public void failure(String step, Throwable failure) {
         String traceId = UUID.randomUUID().toString();
-        String line = "step=" + step + " outcome=failed traceId=" + traceId + " error="
-                + describe(failure);
-        LOG.info(line);
+        String line = "step=" + step + " outcome=failed traceId=" + traceId + " error=" + quoted(describe(failure));
+        LOG.error(line);
         StringWriter trace = new StringWriter();
         failure.printStackTrace(new PrintWriter(trace));
         append(line + System.lineSeparator() + trace);
@@ -112,11 +141,25 @@ public class StepLog {
         return message == null || message.isBlank() ? failure.getClass().getSimpleName() : message;
     }
 
+    /** The console line carries the title; the detail goes to the file only, because the report already shows it. */
     private void line(String step, String outcome, String traceId, String title, String detail, String counts) {
         String line = "step=" + step + " outcome=" + outcome + " traceId=" + traceId
-                + (counts.isEmpty() ? "" : " " + counts) + (title == null ? "" : " title=\"" + title + "\"");
-        LOG.info(line);
-        append(detail == null ? line : line + " detail=\"" + detail + "\"");
+                + (counts.isEmpty() ? "" : " " + counts) + (title == null ? "" : " title=" + quoted(title));
+        log(outcome, line);
+        append(detail == null ? line : line + " detail=" + quoted(detail));
+    }
+
+    private void emit(String outcome, String line) {
+        log(outcome, line);
+        append(line);
+    }
+
+    private static void log(String outcome, String line) {
+        switch (outcome) {
+            case "failed" -> LOG.error(line);
+            case "refused" -> LOG.warn(line);
+            default -> LOG.info(line);
+        }
     }
 
     private void append(String text) {

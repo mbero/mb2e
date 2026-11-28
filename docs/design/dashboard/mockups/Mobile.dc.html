@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>mb2e — Dashboard, narrow screen</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#fff;color:#111;-webkit-font-smoothing:antialiased}
+a{color:#111;text-underline-offset:3px}a:hover{color:#000}
+:focus-visible{outline:2px solid #000;outline-offset:2px}
+.lbl{font:500 12px 'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:#5c5c5c}
+.b{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 9px;border-radius:4px;font:600 12px 'Fira Code',monospace;white-space:nowrap;box-sizing:border-box}
+</style>
+</helmet>
+<div style="width:390px;box-sizing:border-box;font-family:'Fira Code',monospace;background:#fff">
+<header style="display:flex;align-items:center;justify-content:space-between;height:64px;padding:0 12px 0 10px;background:#23262d">
+<img src="mb2e-logo.jpg" alt="mb2e — Markdown Based Blog Engine" style="display:block;width:104px">
+<button type="button" aria-label="Open menu" aria-expanded="false" style="display:flex;align-items:center;justify-content:center;width:44px;height:44px;padding:0;border:2px solid #e6e5dd;background:#23262d;color:#e6e5dd;cursor:pointer">
+<svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 5h14M3 10h14M3 15h14"/></svg></button>
+</header>
+
+<main style="padding:32px 20px 48px">
+<div class="lbl" style="color:#111">Dashboard</div>
+<h1 style="margin:12px 0 0;font-size:32px;line-height:1.12;font-weight:700;letter-spacing:-.02em;text-transform:uppercase">Deployments</h1>
+<p style="margin:10px 0 0;font-size:12px;color:#5c5c5c">Updated 5 s ago · refreshes every 15 s</p>
+
+<section style="margin-top:24px;border-top:2px solid #111">
+<h2 class="lbl" style="margin:12px 0 8px">Service</h2>
+<dl style="margin:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));border:1px solid #e3e3e3;border-radius:4px">
+<div style="padding:12px 14px;border-right:1px solid #e3e3e3;border-bottom:1px solid #e3e3e3"><dt class="lbl">State</dt><dd style="margin:4px 0 0;font-size:14px;font-weight:700;text-transform:uppercase">○ Idle</dd></div>
+<div style="padding:12px 14px;border-bottom:1px solid #e3e3e3"><dt class="lbl">Uptime</dt><dd style="margin:4px 0 0;font-size:14px;font-weight:600">3d 4h 12m</dd></div>
+<div style="padding:12px 14px;border-right:1px solid #e3e3e3;border-bottom:1px solid #e3e3e3;min-width:0"><dt class="lbl">Source</dt><dd style="margin:4px 0 0;font-size:13px;overflow-wrap:anywhere"><a href="#s">mbero/notes</a></dd></div>
+<div style="padding:12px 14px;border-bottom:1px solid #e3e3e3;min-width:0"><dt class="lbl">Target</dt><dd style="margin:4px 0 0;font-size:13px;overflow-wrap:anywhere"><a href="#t">mbero/mbero.github.io</a></dd></div>
+<div style="padding:12px 14px;grid-column:1 / -1"><dt class="lbl">Site</dt><dd style="margin:4px 0 0;font-size:13px"><a href="#site">mbero.github.io ↗</a></dd></div>
+</dl>
+</section>
+
+<section style="margin-top:28px;border-top:2px solid #111">
+<h2 class="lbl" style="margin:12px 0 10px">Last deployment</h2>
+<div style="border:2px solid #000;border-radius:5px;padding:18px">
+<span class="b" style="background:#111;color:#f2f2f2;border:2px solid #000;font-weight:700">! FAILED</span>
+<p style="margin:12px 0 0;font-size:19px;line-height:1.25;font-weight:700;letter-spacing:-.02em;text-transform:uppercase">Your last push did not deploy</p>
+<p style="margin:10px 0 0;font:400 15px/1.6 Inter,sans-serif;color:#3d3d3d">Commit <a href="#c">a41c9e2</a> was built, but the push was rejected 3 times. The site still shows the deployment from 21:52.</p>
+<pre style="margin:12px 0 0;padding:12px 14px;background:#111;color:#f2f2f2;border-radius:4px;font:400 12px/1.6 'Fira Code',monospace;white-space:pre-wrap;overflow-wrap:anywhere">git push rejected 3 times
+remote: Permission denied.
+fatal: Authentication failed (token expired)</pre>
+<p style="margin:12px 0 0;font-size:12px;color:#5c5c5c;line-height:1.7">22:14:03 · 8 min ago<br>Trigger push · Attempts 3 of 3</p>
+</div>
+</section>
+
+<section style="margin-top:28px;border-top:2px solid #111">
+<h2 class="lbl" style="margin:12px 0 10px">Recent deployments</h2>
+<ul style="list-style:none;margin:0;padding:0;border:1px solid #e3e3e3;border-radius:4px">
+<sc-for list="{{rows}}" as="r" hint-placeholder-count="12">
+<li style="padding:12px 14px 12px 12px;border-bottom:1px solid #e3e3e3;border-left:{{r.edge}}">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+<span>
+<sc-if value="{{r.isDeployed}}" hint-placeholder-val="{{ true }}"><span class="b" style="background:#111;color:#f2f2f2;border:1px solid #111">✓ deployed</span></sc-if>
+<sc-if value="{{r.isUp}}" hint-placeholder-val="{{ false }}"><span class="b" style="background:#fff;color:#5c5c5c;border:1px solid #c4c4c4;font-weight:500">= up to date</span></sc-if>
+<sc-if value="{{r.isRefused}}" hint-placeholder-val="{{ false }}"><span class="b" style="background:#fff;color:#111;border:1px dashed #111">– refused</span></sc-if>
+<sc-if value="{{r.isFailed}}" hint-placeholder-val="{{ false }}"><span class="b" style="background:#111;color:#f2f2f2;border:2px solid #000;font-weight:700">! failed</span></sc-if>
+</span>
+<span style="font-size:12px;color:#5c5c5c;text-align:right">{{r.when}} · {{r.ago}}</span>
+</div>
+<div style="margin-top:8px;font-size:12px;color:#5c5c5c;display:flex;flex-wrap:wrap;gap:4px 14px"><span>{{r.trigger}}</span><span>{{r.attempts}}</span><span><a href="#c">{{r.src}}</a> → {{r.tgt}}</span></div>
+<sc-if value="{{r.hasCause}}" hint-placeholder-val="{{ false }}">
+<button type="button" aria-expanded="{{r.ariaExp}}" onClick="{{r.toggle}}" style="margin-top:10px;display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 12px;border:1px solid #e3e3e3;border-radius:4px;background:#fff;font:500 13px 'Fira Code',monospace;color:#111;cursor:pointer">{{r.btn}}</button>
+</sc-if>
+<sc-if value="{{r.open}}" hint-placeholder-val="{{ false }}">
+<pre style="margin:8px 0 0;padding:10px 12px;background:#111;color:#f2f2f2;border-radius:4px;font:400 12px/1.6 'Fira Code',monospace;white-space:pre-wrap;overflow-wrap:anywhere">{{r.cause}}</pre>
+</sc-if>
+</li>
+</sc-for>
+</ul>
+</section>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":2260}}'>
+class Component extends DCLogic {
+  constructor(p){ super(p); this.state = { open: { r5: true } }; }
+  renderVals() {
+    const all = [
+      ['r1','22:14','8 min ago','failed','push',3,'a41c9e2','','git push rejected 3 times\nfatal: Authentication failed (token expired)'],
+      ['r2','21:52','30 min ago','deployed','push',1,'7d03b1f','9f8e7d6',''],
+      ['r3','21:31','51 min ago','up_to_date','poll',1,'7d03b1f','',''],
+      ['r4','20:47','1 h ago','deployed','push',2,'c2e8a90','3b61f0c',''],
+      ['r5','19:05','3 h ago','refused','push',1,'e19d4a7','','No note carries the publish tag (#publish).\nNothing to publish. The site stays as it is.'],
+      ['r6','18:58','3 h ago','deployed','push',1,'5fa20c3','81d7e4a',''],
+      ['r7','16:30','5 h ago','up_to_date','poll',1,'5fa20c3','',''],
+      ['r8','14:20','8 h ago','deployed','poll',1,'0b9e6d1','d44c1b2',''],
+      ['r9','14:12','8 h ago','failed','push',1,'0b9e6d1','','network: could not resolve host github.com'],
+      ['r10','09:41','13 h ago','up_to_date','startup',1,'0b9e6d1','',''],
+      ['r11','23:02','yesterday','refused','push',1,'f7713ac','','Front matter error in posts/angular-signals.md:\n  missing required field "title"'],
+      ['r12','21:40','yesterday','deployed','push',1,'8a2b5e0','c90f3a7','']
+    ];
+    const open = this.state.open;
+    return { rows: all.map(([id, when, ago, o, trigger, att, s, t, cause]) => {
+      const isOpen = !!open[id] && !!cause;
+      return { when, ago, trigger, src: s, tgt: t || '—', cause,
+        attempts: att > 1 ? att + ' attempts' : '1 attempt',
+        isDeployed: o === 'deployed', isUp: o === 'up_to_date', isRefused: o === 'refused', isFailed: o === 'failed',
+        hasCause: !!cause, open: isOpen, ariaExp: isOpen ? 'true' : 'false',
+        btn: isOpen ? '▾ Hide cause' : '▸ Show cause',
+        edge: o === 'failed' ? '3px solid #000' : '3px solid transparent',
+        toggle: () => this.setState({ open: { ...this.state.open, [id]: !this.state.open[id] } }) };
+    }) };
+  }
+}
+</script>
+</body>
+</html>

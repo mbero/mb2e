@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>mb2e — Outcome badges, monochrome vs accent</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#fff;color:#111;-webkit-font-smoothing:antialiased}
+.lbl{font:500 12px 'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:#5c5c5c}
+.b{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 9px;border-radius:4px;font:600 12px 'Fira Code',monospace;white-space:nowrap;box-sizing:border-box}
+</style>
+</helmet>
+<div style="width:1200px;box-sizing:border-box;padding:48px;font-family:'Fira Code',monospace;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:48px">
+
+<section>
+<div style="border-top:2px solid #111;padding-top:12px;display:flex;justify-content:space-between"><h2 style="margin:0;font-size:16px;font-weight:700;text-transform:uppercase;letter-spacing:-.02em">A · Monochrome</h2><span class="lbl" style="color:#111">Recommended</span></div>
+<div style="margin-top:20px;display:flex;flex-wrap:wrap;gap:10px">
+<span class="b" style="background:#111;color:#f2f2f2;border:1px solid #111">✓ deployed</span>
+<span class="b" style="background:#fff;color:#5c5c5c;border:1px solid #c4c4c4;font-weight:500">= up to date</span>
+<span class="b" style="background:#fff;color:#111;border:1px dashed #111">– refused</span>
+<span class="b" style="background:#111;color:#f2f2f2;border:2px solid #000;font-weight:700">! failed</span>
+</div>
+<p class="lbl" style="margin:28px 0 8px">Failed row</p>
+<div style="border:1px solid #e3e3e3;border-left:3px solid #000;padding:12px 14px;display:flex;gap:16px;align-items:center;font-size:13px">
+<span class="b" style="background:#111;color:#f2f2f2;border:2px solid #000;font-weight:700">! failed</span><span>22:14:03</span><span>push</span><b>3 of 3</b><span>a41c9e2</span>
+</div>
+<p class="lbl" style="margin:28px 0 8px">Summary header</p>
+<div style="border:2px solid #000;border-radius:5px;padding:16px 18px;font-size:18px;font-weight:700;text-transform:uppercase;letter-spacing:-.02em">Your last push did not deploy</div>
+<ul style="margin:24px 0 0;padding-left:18px;list-style:square;font:400 15px/1.6 Inter,sans-serif;color:#3d3d3d">
+<li>Identical to the blog: no new tokens.</li>
+<li>Outcome is carried by text + glyph + fill + border weight, so it survives greyscale, printing and colour blindness.</li>
+<li>Weakness: "deployed" and "failed" are both black fills; at a glance only the glyph and border differ.</li>
+</ul>
+</section>
+
+<section>
+<div style="border-top:2px solid #111;padding-top:12px;display:flex;justify-content:space-between"><h2 style="margin:0;font-size:16px;font-weight:700;text-transform:uppercase;letter-spacing:-.02em">B · One accent for failed</h2><span class="lbl">Optional</span></div>
+<div style="margin-top:20px;display:flex;flex-wrap:wrap;gap:10px">
+<span class="b" style="background:#111;color:#f2f2f2;border:1px solid #111">✓ deployed</span>
+<span class="b" style="background:#fff;color:#5c5c5c;border:1px solid #c4c4c4;font-weight:500">= up to date</span>
+<span class="b" style="background:#fff;color:#111;border:1px dashed #111">– refused</span>
+<span class="b" style="background:#b42318;color:#fff;border:2px solid #b42318;font-weight:700">! failed</span>
+</div>
+<p class="lbl" style="margin:28px 0 8px">Failed row</p>
+<div style="border:1px solid #e3e3e3;border-left:3px solid #b42318;padding:12px 14px;display:flex;gap:16px;align-items:center;font-size:13px">
+<span class="b" style="background:#b42318;color:#fff;border:2px solid #b42318;font-weight:700">! failed</span><span>22:14:03</span><span>push</span><b>3 of 3</b><span>a41c9e2</span>
+</div>
+<p class="lbl" style="margin:28px 0 8px">Summary header</p>
+<div style="border:2px solid #b42318;border-radius:5px;padding:16px 18px;font-size:18px;font-weight:700;text-transform:uppercase;letter-spacing:-.02em;color:#b42318">Your last push did not deploy</div>
+<ul style="margin:24px 0 0;padding-left:18px;list-style:square;font:400 15px/1.6 Inter,sans-serif;color:#3d3d3d">
+<li>New token <code style="font-family:'Fira Code',monospace;font-size:13px">--color-alert: #b42318</code> — 6.5:1 on white, AA for text.</li>
+<li>"Failed" pops out in a 50-row table, which is the dashboard's one job.</li>
+<li>Cost: the first colour in a monochrome family; it must stay reserved for failed only. The glyph and text stay, so colour is never the only signal.</li>
+<li>Not the logo blue: blue reads as "info/link", not "error".</li>
+</ul>
+</section>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1200,"height":760}}'>
+class Component extends DCLogic { renderVals() { return {}; } }
+</script>
+</body>
+</html>
